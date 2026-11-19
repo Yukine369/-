@@ -235,7 +235,7 @@ body.has-upd .toast{bottom:calc(190px + var(--safe-b))}
 const APK_URL = 'app.apk';           // файл APK рядом с сайтом (его кладёт GitHub Actions)
 const IN_APP = /GoalsAndroidApp/.test(navigator.userAgent);
 const STORE_KEY = 'goals-rewards-v1';   // ключ не меняем, чтобы сохранились старые данные
-const APP_VERSION = '2.1.0';             // при каждом выпуске повышать и здесь, и в version.json
+const APP_VERSION = '2.1.1';             // при каждом выпуске повышать и здесь, и в version.json
 // Где лежит version.json и app.apk. Пусто = рядом с этой страницей.
 // Если в APK страница вшита внутрь приложения, впишите сюда адрес сайта, например 'https://имя.github.io/ezhednevki/'
 const UPDATE_BASE = IN_APP ? 'https://yukine369.github.io/-/' : '';   // в APK страница вшита внутрь, поэтому версию проверяем на сайте
@@ -1012,6 +1012,14 @@ async function checkUpdate(manual) {
 }
 function showUpdate(info) {
   if (updShown) return; updShown = true;
+  if (IN_APP) {   // в приложении — всплывающее окно
+    const notes = Array.isArray(info.notes) && info.notes.length ? `<p style="margin:4px 0 0"><b>Что нового:</b></p><ul class="notes">${info.notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul>` : '';
+    const o = modal({ title: '🎉 Вышла новая версия', okText: 'Обновить', cancelText: 'Позже',
+      body: `<p style="margin:4px 0 8px">Доступна версия <b>${esc(info.version)}</b>, у вас ${APP_VERSION}.</p>${notes}<p class="muted" style="font-size:13px;margin-top:10px">Скачается новый файл приложения — откройте его и нажмите «Обновить». Ваши задания и монеты сохранятся.</p>`,
+      onOk() { updShown = false; doUpdate(info); } });
+    o.addEventListener('click', e => { if (e.target === o || e.target.closest('[data-x]')) { S.ui.skipVer = info.version; save(); updShown = false; } });
+    return;
+  }
   const b = document.createElement('div'); b.className = 'upd'; b.setAttribute('role', 'status');
   b.innerHTML = `<div class="grow"><b>Доступна новая версия ${esc(info.version)}</b><small>${IN_APP ? 'Обновите приложение, чтобы получить новые функции' : 'Обновите страницу, чтобы получить новые функции'}</small></div>
     <div class="acts">${Array.isArray(info.notes) && info.notes.length ? '<button class="btn sm" data-u="notes" style="background:transparent;color:#fff;border-color:#4a544f">Что нового</button>' : ''}
