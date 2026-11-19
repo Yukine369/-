@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Цели и награды</title>
+<title>Ежедневки</title>
 <meta name="theme-color" content="#1f3d34">
-<meta name="description" content="Ставь цели, назначай себе награды и получай бонус за выполнение.">
+<meta name="description" content="Ежедневные, еженедельные и ежемесячные задания, цели и награды за выполнение.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -135,7 +135,7 @@ details.archive > summary::-webkit-details-marker{display:none}
 .log-row .tx{flex:1}
 .delta{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
 .delta.p{color:var(--ok)} .delta.m{color:var(--red)}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 .stat{padding:14px}
 .stat b{display:block;font:700 22px Unbounded,sans-serif;color:var(--green)}
 .stat span{font-size:12.5px;color:var(--muted)}
@@ -179,6 +179,31 @@ textarea.inp{min-height:110px;resize:vertical;font-family:ui-monospace,Menlo,mon
 
 .toast{position:fixed;left:50%;bottom:calc(92px + var(--safe-b));transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;z-index:60;font-weight:600;font-size:14px;max-width:90vw;box-shadow:0 10px 30px -10px rgba(0,0,0,.5);animation:up .2s}
 canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:70}
+/* periodic tasks */
+.per{margin-bottom:14px;overflow:hidden}
+.per-switch{margin:4px 0 14px;position:sticky;top:calc(98px + var(--safe-t));z-index:10;box-shadow:0 6px 14px -10px rgba(31,61,52,.5)}
+.per-switch button{display:flex;flex-direction:column;align-items:center;gap:1px;padding:8px 4px}
+.per-switch small{font-size:11.5px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+.per-head{display:flex;align-items:center;gap:12px;padding:14px 16px 10px}
+.per-head .set-emoji{width:40px;height:40px;font-size:21px}
+.per-head h3{font-size:16px}
+.per-head .meta{margin-top:3px}
+.task .streak{font-size:12px;color:#b5651d;font-weight:700;white-space:nowrap}
+.task .t-edit{margin-left:-4px}
+.per-all{margin:4px 16px 14px;padding:10px 12px;border-radius:12px;background:var(--gold-soft);color:#6b4a00;font-weight:600;font-size:14px;text-align:center}
+.tpl{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px}
+
+/* update banner */
+.upd{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(88px + var(--safe-b));z-index:40;width:min(560px,calc(100% - 24px));display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--ink);color:#fff;border-radius:16px;box-shadow:0 14px 34px -12px rgba(0,0,0,.55);animation:up .25s}
+.upd{flex-wrap:wrap}
+.upd .grow{flex:1 1 200px;min-width:0;font-size:14px}
+.upd .acts{display:flex;gap:8px;align-items:center;margin-left:auto}
+body.has-upd .toast{bottom:calc(190px + var(--safe-b))}
+.upd .grow small{display:block;color:#b9c2bc;font-size:12.5px}
+.upd .x{background:none;border:0;color:#9aa49e;font-size:20px;padding:2px 6px}
+.notes{margin:6px 0 0;padding-left:20px}
+.notes li{margin:3px 0}
+
 .muted{color:var(--muted)}
 .mt{margin-top:12px}
 .hidden{display:none!important}
@@ -187,11 +212,12 @@ canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:70}
 <body>
 <header class="top">
   <div class="wrap">
-    <div class="brand"><div class="logo">✓</div><h1>Цели и награды</h1></div>
+    <div class="brand"><div class="logo">✓</div><h1>Ежедневки</h1></div>
     <div class="balance" id="balance" title="Ваш баланс"><span class="ic" id="balIcon">🪙</span><span id="balVal">0</span></div>
   </div>
   <div class="wrap">
     <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" data-tab="tasks">Задания</button>
       <button class="tab" role="tab" data-tab="goals">Цели</button>
       <button class="tab" role="tab" data-tab="rewards">Награды</button>
       <button class="tab" role="tab" data-tab="history">История</button>
@@ -208,7 +234,11 @@ canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:70}
 /* ===================== Настройки сборки ===================== */
 const APK_URL = 'app.apk';           // файл APK рядом с сайтом (его кладёт GitHub Actions)
 const IN_APP = /GoalsAndroidApp/.test(navigator.userAgent);
-const STORE_KEY = 'goals-rewards-v1';
+const STORE_KEY = 'goals-rewards-v1';   // ключ не меняем, чтобы сохранились старые данные
+const APP_VERSION = '2.1.0';             // при каждом выпуске повышать и здесь, и в version.json
+// Где лежит version.json и app.apk. Пусто = рядом с этой страницей.
+// Если в APK страница вшита внутрь приложения, впишите сюда адрес сайта, например 'https://имя.github.io/ezhednevki/'
+const UPDATE_BASE = IN_APP ? 'https://yukine369.github.io/-/' : '';   // в APK страница вшита внутрь, поэтому версию проверяем на сайте
 
 /* ===================== Состояние ===================== */
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
@@ -232,6 +262,15 @@ function seed() {
       bonusAll: { coins: 100, reward: 'Поход в кино' },
       partial: { mode: 'proportional', percent: 75, coins: 40, reward: '', minPercent: 50 },
     }],
+    tasks: [
+      { id: uid(), emoji: '💧', title: 'Выпить 6 стаканов воды', period: 'day', coins: 5, reward: '' },
+      { id: uid(), emoji: '🚶', title: 'Прогулка 30 минут', period: 'day', coins: 10, reward: '' },
+      { id: uid(), emoji: '📚', title: 'Почитать 20 минут', period: 'day', coins: 10, reward: '' },
+      { id: uid(), emoji: '🧹', title: 'Уборка дома', period: 'week', coins: 30, reward: '' },
+      { id: uid(), emoji: '📞', title: 'Позвонить родным', period: 'week', coins: 20, reward: '' },
+      { id: uid(), emoji: '💰', title: 'Отложить деньги', period: 'month', coins: 80, reward: '' },
+    ],
+    taskStats: { done: 0 },
     shop: [
       { id: uid(), emoji: '🎬', title: 'Вечер кино', cost: 60 },
       { id: uid(), emoji: '🍕', title: 'Любимая пицца', cost: 120 },
@@ -240,7 +279,7 @@ function seed() {
     ],
     prizes: [],
     log: [],
-    ui: { tab: 'goals', hideDl: false },
+    ui: { tab: 'tasks', hideDl: false },
   };
 }
 
@@ -259,6 +298,9 @@ function normalize(s) {
   s.shop = Array.isArray(s.shop) ? s.shop : [];
   s.prizes = Array.isArray(s.prizes) ? s.prizes : [];
   s.log = Array.isArray(s.log) ? s.log : [];
+  s.tasks = Array.isArray(s.tasks) ? s.tasks : [];
+  s.tasks.forEach(t => { if (!['day', 'week', 'month'].includes(t.period)) t.period = 'day'; t.coins = +t.coins || 0; t.streak = +t.streak || 0; });
+  s.taskStats = Object.assign({ done: 0 }, s.taskStats || {});
   s.ui = Object.assign({ tab: 'goals', hideDl: false }, s.ui || {});
   s.balance = Number(s.balance) || 0;
   s.sets.forEach(x => {
@@ -364,23 +406,167 @@ function restartSet(set) {
   S.sets.unshift(copy); addLog(`Новый круг: ${copy.title}`, 0); save(); render(); toast('Набор запущен заново');
 }
 
+/* ===================== Периодические задания ===================== */
+const PERIODS = {
+  day:   { title: 'Ежедневные',   one: 'Каждый день',   emoji: '☀️', unit: ['день', 'дня', 'дней'] },
+  week:  { title: 'Еженедельные', one: 'Каждую неделю', emoji: '📅', unit: ['неделя', 'недели', 'недель'] },
+  month: { title: 'Ежемесячные',  one: 'Каждый месяц',  emoji: '🗓️', unit: ['месяц', 'месяца', 'месяцев'] },
+};
+const pad = n => String(n).padStart(2, '0');
+const dayKey = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+function periodStart(period, d = new Date()) {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  if (period === 'week') x.setDate(x.getDate() - ((x.getDay() + 6) % 7));   // неделя с понедельника
+  if (period === 'month') x.setDate(1);
+  return x;
+}
+function periodEnd(period, d = new Date()) {
+  const x = periodStart(period, d);
+  if (period === 'day') x.setDate(x.getDate() + 1);
+  if (period === 'week') x.setDate(x.getDate() + 7);
+  if (period === 'month') x.setMonth(x.getMonth() + 1);
+  return x;
+}
+const periodKey = (period, d = new Date()) => period[0] + ':' + dayKey(periodStart(period, d));
+function prevPeriodKey(period) { const x = periodStart(period); x.setDate(x.getDate() - 1); return periodKey(period, x); }
+const taskDone = t => t.doneKey === periodKey(t.period);
+const taskStreak = t => (t.doneKey === periodKey(t.period) || t.doneKey === prevPeriodKey(t.period)) ? (t.streak || 0) : 0;
+function resetsIn(period) {
+  const ms = periodEnd(period) - new Date();
+  const h = Math.floor(ms / 3600000), d = Math.floor(h / 24);
+  if (d >= 2) return `обновится через ${d} ${plural(d, 'день', 'дня', 'дней')}`;
+  if (h >= 1) return `обновится через ${h} ч`;
+  return `обновится через ${Math.max(1, Math.ceil(ms / 60000))} мин`;
+}
+
+function toggleTask(id) {
+  const t = S.tasks.find(x => x.id === id); if (!t) return;
+  const cur = periodKey(t.period);
+  if (t.doneKey === cur) {
+    t.doneKey = t.prevDoneKey || null; t.streak = t.prevStreak || 0;
+    if (t.coins) changeBalance(-t.coins, `Отменено задание: ${t.title}`);
+    const i = S.prizes.findIndex(p => p.ref === t.id + cur && !p.used); if (i >= 0) S.prizes.splice(i, 1);
+    S.taskStats.done = Math.max(0, S.taskStats.done - 1);
+  } else {
+    t.prevDoneKey = t.doneKey || null; t.prevStreak = t.streak || 0;
+    t.streak = t.doneKey === prevPeriodKey(t.period) ? (t.streak || 0) + 1 : 1;
+    t.doneKey = cur; S.taskStats.done++;
+    if (t.coins) changeBalance(t.coins, `Задание: ${t.title}`); else addLog(`Задание: ${t.title}`, 0);
+    if (t.reward) addPrize(t.reward, `за задание «${t.title}»`, t.id + cur, '🎁');
+    const group = S.tasks.filter(x => x.period === t.period);
+    if (group.length > 1 && group.every(taskDone)) { confetti(90); toast(`Все ${PERIODS[t.period].title.toLowerCase()} выполнены! 🎉`); }
+    else toast(`+${coin(t.coins)}${t.streak > 1 ? ' · серия ' + t.streak + ' 🔥' : ''}`);
+  }
+  save(); render();
+}
+
+function viewTasks() {
+  let h = dlBanner();
+  if (!S.tasks.length) {
+    return h + `<div class="card empty mt"><b>Заданий пока нет</b>Добавьте то, что хотите делать регулярно: каждый день, раз в неделю или раз в месяц. Задания обновляются сами, и за каждое выполнение вы получаете ${esc(S.coin.name)}.
+      <div class="mt"><button class="btn primary" data-act="new-task">Добавить задание</button></div>
+      <div class="tpl">${TEMPLATES.map((x, i) => `<button class="btn sm" data-act="tpl" data-i="${i}">${x.emoji} ${esc(x.title)}</button>`).join('')}</div></div>`;
+  }
+  const per = S.ui.per || 'day';
+  h += `<div class="seg per-switch" role="tablist">${['day', 'week', 'month'].map(k => {
+    const l = S.tasks.filter(t => t.period === k), d = l.filter(taskDone).length;
+    return `<button type="button" role="tab" data-act="per" data-p="${k}" aria-pressed="${k === per}">${PERIODS[k].title}<small>${l.length ? d + '/' + l.length : '—'}</small></button>`;
+  }).join('')}</div>`;
+  {
+    const list = S.tasks.filter(t => t.period === per);
+    if (!list.length) {
+      const tpl = TEMPLATES.map((x, i) => [x, i]).filter(([x]) => x.period === per);
+      h += `<div class="card empty"><b>Нет ${PERIODS[per].title.toLowerCase().replace(/е$/, 'х')} заданий</b>${{ day: 'Добавьте то, что хотите делать каждый день.', week: 'Добавьте то, что нужно делать раз в неделю.', month: 'Добавьте то, что нужно делать раз в месяц.' }[per]}
+        <div class="mt"><button class="btn primary" data-act="new-task" data-period="${per}">Добавить задание</button></div>
+        ${tpl.length ? `<div class="tpl">${tpl.map(([x, i]) => `<button class="btn sm" data-act="tpl" data-i="${i}">${x.emoji} ${esc(x.title)}</button>`).join('')}</div>` : ''}</div>`;
+      return h;
+    }
+    const done = list.filter(taskDone).length, P = PERIODS[per];
+    const pct = Math.round(done / list.length * 100);
+    h += `<article class="card per">
+      <div class="per-head"><div class="set-emoji">${P.emoji}</div>
+        <div class="set-title"><h3>${P.title}</h3><div class="meta"><span>${done} из ${list.length}</span><span>${resetsIn(per)}</span></div></div>
+        <button class="icon-btn" data-act="new-task" data-period="${per}" aria-label="Добавить">＋</button></div>
+      <div class="progress ${done === list.length ? 'full' : ''}"><i style="width:${pct}%"></i></div>
+      <ul class="goals mt">${list.map(t => {
+        const d = taskDone(t), st = taskStreak(t);
+        return `<li class="goal task ${d ? 'done' : ''}" data-act="toggle-task" data-id="${t.id}" role="checkbox" aria-checked="${d}" tabindex="0">
+          <span class="check">✓</span>
+          <span class="g-title"><span>${esc(t.emoji || '')} ${esc(t.title)}</span>${t.reward ? `<span class="g-reward">🎁 ${esc(t.reward)}</span>` : ''}</span>
+          ${st > 1 ? `<span class="streak" title="Серия подряд">🔥 ${st}</span>` : ''}
+          <span class="coins">+${coin(t.coins)}</span>
+          <button class="icon-btn t-edit" data-act="edit-task" data-id="${t.id}" aria-label="Изменить">✎</button>
+        </li>`; }).join('')}</ul>
+      ${done === list.length ? `<div class="per-all">Всё выполнено — так держать! ✨</div>` : '<div style="height:10px"></div>'}
+    </article>`;
+  }
+  if (!storageOk) h += `<p class="muted" style="font-size:13px">⚠️ Браузер не даёт сохранять данные — прогресс пропадёт после закрытия страницы.</p>`;
+  return h;
+}
+
+const TEMPLATES = [
+  { emoji: '💧', title: 'Пить воду', period: 'day', coins: 5 },
+  { emoji: '🏃', title: 'Зарядка', period: 'day', coins: 10 },
+  { emoji: '📚', title: 'Чтение 20 минут', period: 'day', coins: 10 },
+  { emoji: '🧹', title: 'Уборка', period: 'week', coins: 30 },
+  { emoji: '🛒', title: 'Закупка продуктов', period: 'week', coins: 15 },
+  { emoji: '💰', title: 'Отложить деньги', period: 'month', coins: 80 },
+];
+const TASK_EMOJIS = ['✅', '💧', '🏃', '📚', '🧘', '🧹', '🛒', '💰', '🦷', '💊', '🌱', '📞', '🍎', '😴', '🧠', '✍️'];
+
+function editTask(id, period) {
+  const t = S.tasks.find(x => x.id === id);
+  let per = t ? t.period : (period || 'day'), emoji = t ? (t.emoji || '✅') : '✅';
+  modal({
+    title: t ? 'Изменить задание' : 'Новое задание', okText: t ? 'Сохранить' : 'Добавить',
+    extra: t ? `<button class="icon-btn" data-deltask aria-label="Удалить" title="Удалить">🗑</button>` : '',
+    body: `<label class="field"><span>Задание</span><input class="inp" id="tTitle" placeholder="Например: «Зарядка 10 минут»" value="${esc(t ? t.title : '')}"></label>
+      <div class="field"><span>Как часто</span><div class="seg" id="tPer">${['day', 'week', 'month'].map(k => `<button type="button" data-p="${k}" aria-pressed="${k === per}">${PERIODS[k].one}</button>`).join('')}</div>
+        <small id="tPerHint"></small></div>
+      <div class="row"><label class="field" style="flex:0 0 120px"><span>${esc(S.coin.name)}</span><input class="inp" type="number" min="0" id="tCoins" value="${t ? t.coins : 10}"></label>
+        <label class="field"><span>Своя награда (необязательно)</span><input class="inp" id="tReward" placeholder="Например: «Серия в сериале»" value="${esc(t ? t.reward : '')}"></label></div>
+      <div class="field"><span>Значок</span><div class="emoji-pick" id="tEmoji">${TASK_EMOJIS.map(e => `<button type="button" aria-pressed="${e === emoji}">${e}</button>`).join('')}</div></div>`,
+    onOpen(o, close) {
+      const hint = () => $('#tPerHint', o).textContent = { day: 'Отметка сбрасывается каждую ночь в 00:00.', week: 'Сбрасывается в понедельник в 00:00.', month: 'Сбрасывается 1‑го числа каждого месяца.' }[per];
+      hint();
+      $('#tPer', o).addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; per = b.dataset.p; $('#tPer', o).querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); hint(); });
+      $('#tEmoji', o).addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; emoji = b.textContent; $('#tEmoji', o).querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); });
+      const d = o.querySelector('[data-deltask]');
+      if (d) d.addEventListener('click', () => { close(); confirmBox('Удалить задание?', `«${esc(t.title)}» исчезнет. Уже полученные ${esc(S.coin.name)} останутся.`, 'Удалить', () => { S.tasks = S.tasks.filter(x => x.id !== id); addLog(`Удалено задание: ${t.title}`); save(); render(); }, true); });
+      if (!t) setTimeout(() => $('#tTitle', o).focus(), 50);
+    },
+    onOk(o) {
+      const title = $('#tTitle', o).value.trim();
+      if (!title) { toast('Введите задание'); $('#tTitle', o).focus(); return false; }
+      const coins = Math.max(0, Math.round(+$('#tCoins', o).value || 0)), reward = $('#tReward', o).value.trim();
+      if (t) {
+        if (t.period !== per) { // смена периода — серия начинается заново, текущая отметка снимается без возврата монет
+          t.doneKey = null; t.prevDoneKey = null; t.streak = 0; t.prevStreak = 0;
+        } else if (taskDone(t) && coins !== t.coins) changeBalance(coins - t.coins, `Пересчёт задания: ${title}`);
+        Object.assign(t, { title, coins, reward, emoji, period: per });
+      } else { S.tasks.push({ id: uid(), title, coins, reward, emoji, period: per, streak: 0 }); addLog(`Новое задание: ${title}`); }
+      S.ui.per = per; save(); render(); toast(t ? 'Сохранено' : 'Задание добавлено');
+    },
+  });
+}
+
 /* ===================== Рендер ===================== */
 function render() {
   $('#balVal').textContent = fmt(S.balance);
   $('#balIcon').textContent = S.coin.icon;
   document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', t.dataset.tab === S.ui.tab));
   const fab = $('#fab');
-  fab.classList.toggle('hidden', !(S.ui.tab === 'goals' || S.ui.tab === 'rewards'));
-  fab.textContent = S.ui.tab === 'rewards' ? '＋ Награда в магазин' : '＋ Новый набор целей';
+  fab.classList.toggle('hidden', !['tasks', 'goals', 'rewards'].includes(S.ui.tab));
+  fab.textContent = { tasks: '＋ Новое задание', rewards: '＋ Награда в магазин', goals: '＋ Новый набор целей' }[S.ui.tab] || '';
   const v = $('#view');
-  v.innerHTML = ({ goals: viewGoals, rewards: viewRewards, history: viewHistory, more: viewMore })[S.ui.tab]();
+  v.innerHTML = (({ tasks: viewTasks, goals: viewGoals, rewards: viewRewards, history: viewHistory, more: viewMore })[S.ui.tab] || viewTasks)();
 }
 
 function dlBanner() {
   if (IN_APP || S.ui.hideDl) return '';
   return `<div class="card dl" id="dlBanner">
     <div class="robot">${androidSvg(26)}</div>
-    <div class="grow"><b>Приложение для Android</b><p>Те же цели и награды — в телефоне, работает без интернета.</p></div>
+    <div class="grow"><b>Приложение для Android</b><p>Те же задания, цели и награды — в телефоне, работает без интернета.</p></div>
     <a class="btn gold sm" href="${APK_URL}" data-act="apk">Скачать</a>
     <button class="x" data-act="hide-dl" aria-label="Скрыть">×</button>
   </div>`;
@@ -392,7 +578,7 @@ function androidSvg(s) {
 function viewGoals() {
   const active = S.sets.filter(s => s.status === 'active');
   const closed = S.sets.filter(s => s.status === 'closed');
-  let h = dlBanner();
+  let h = '';
   h += `<div class="section-h"><h2>Активные наборы</h2><span class="hint">${active.length ? 'нажмите на цель, чтобы отметить' : ''}</span></div>`;
   if (!active.length) h += `<div class="card empty"><b>Пока нет целей</b>Создайте набор: несколько целей, награда за каждую и большой приз за все сразу.<div class="mt"><button class="btn primary" data-act="new-set">Создать набор</button></div></div>`;
   h += active.map(setCard).join('');
@@ -478,6 +664,7 @@ function viewHistory() {
   const allSets = S.sets.filter(s => s.result && s.result.kind === 'all').length;
   let h = `<div class="section-h"><h2>Статистика</h2></div>
   <div class="stats">
+    <div class="card stat"><b>${fmt(S.taskStats.done)}</b><span>заданий выполнено</span></div>
     <div class="card stat"><b>${fmt(doneGoals)}</b><span>целей выполнено</span></div>
     <div class="card stat"><b>${fmt(allSets)}</b><span>наборов на 100%</span></div>
     <div class="card stat"><b>${fmt(earned)}</b><span>${esc(S.coin.name)} заработано</span></div>
@@ -494,11 +681,16 @@ function viewMore() {
   <div class="card form-card">
     <div style="display:flex;gap:14px;align-items:center">
       <div class="set-emoji" style="background:#e4efd6">${androidSvg(26)}</div>
-      <div style="flex:1"><b>Цели и награды для Android</b><div class="muted" style="font-size:13.5px">Скачайте APK, откройте файл и разрешите установку из этого источника.</div></div>
+      <div style="flex:1"><b>Ежедневки для Android</b><div class="muted" style="font-size:13.5px">Скачайте APK, откройте файл и разрешите установку из этого источника.</div></div>
     </div>
     <div class="btn-row mt"><a class="btn primary" href="${APK_URL}" data-act="apk">Скачать APK</a></div>
     <p class="muted" style="font-size:12.5px;margin:10px 0 0">Данные сайта и приложения хранятся отдельно, на каждом устройстве. Чтобы перенести прогресс — сделайте резервную копию ниже и вставьте её на другом устройстве.</p>
   </div>`}
+  <div class="section-h"><h2>Обновления</h2></div>
+  <div class="card form-card">
+    <div>Установлена версия <b>${APP_VERSION}</b>.</div>
+    <div class="btn-row mt"><button class="btn sm" data-act="check-update">Проверить обновления</button></div>
+  </div>
   <div class="section-h"><h2>Валюта</h2></div>
   <div class="card form-card">
     <div class="row">
@@ -515,7 +707,7 @@ function viewMore() {
   </div>
   <div class="section-h"><h2>Сброс</h2></div>
   <div class="card form-card"><button class="btn danger" data-act="reset">Удалить все данные</button></div>
-  <p class="muted" style="text-align:center;font-size:12.5px;margin-top:22px">Цели и награды · данные хранятся только на этом устройстве</p>`;
+  <p class="muted" style="text-align:center;font-size:12.5px;margin-top:22px">Ежедневки · версия ${APP_VERSION} · данные хранятся только на этом устройстве</p>`;
 }
 
 /* ===================== Модальные окна ===================== */
@@ -696,9 +888,9 @@ async function copyText(t) {
 }
 function importJson(text) {
   let s; try { s = JSON.parse(text); } catch (e) { toast('Не получилось прочитать копию'); return; }
-  if (!s || s.v !== 1 || !Array.isArray(s.sets)) { toast('Это не резервная копия «Целей и наград»'); return; }
+  if (!s || s.v !== 1 || !Array.isArray(s.sets)) { toast('Это не резервная копия «Ежедневок»'); return; }
   confirmBox('Восстановить копию?', 'Текущие данные на этом устройстве заменятся данными из копии.', 'Восстановить', () => {
-    delete s.exportedAt; S = normalize(s); save(); S.ui.tab = 'goals'; render(); toast('Данные восстановлены');
+    delete s.exportedAt; S = normalize(s); save(); S.ui.tab = 'tasks'; render(); toast('Данные восстановлены');
   });
 }
 
@@ -706,15 +898,21 @@ function importJson(text) {
 document.querySelector('.tabs').addEventListener('click', e => {
   const t = e.target.closest('.tab'); if (!t) return; S.ui.tab = t.dataset.tab; save(); render(); window.scrollTo(0, 0);
 });
-$('#fab').addEventListener('click', () => S.ui.tab === 'rewards' ? editShop(null) : editSet(null));
+$('#fab').addEventListener('click', () => S.ui.tab === 'rewards' ? editShop(null) : S.ui.tab === 'tasks' ? editTask(null, S.ui.per) : editSet(null));
 document.addEventListener('keydown', e => {
-  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.goal[data-act]')) { e.preventDefault(); e.target.click(); }
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.goal[data-act]') && e.target === document.activeElement) { e.preventDefault(); e.target.click(); }
   if (e.key === 'Escape' && window.__back) window.__back();
 });
 $('#view').addEventListener('click', async e => {
   const el = e.target.closest('[data-act]'); if (!el) return;
   const act = el.dataset.act, set = S.sets.find(s => s.id === el.dataset.set);
   switch (act) {
+    case 'edit-task': e.stopPropagation(); editTask(el.dataset.id); break;
+    case 'toggle-task': toggleTask(el.dataset.id); break;
+    case 'new-task': editTask(null, el.dataset.period || S.ui.per); break;
+    case 'per': S.ui.per = el.dataset.p; save(); render(); break;
+    case 'tpl': { const x = TEMPLATES[+el.dataset.i]; S.ui.per = x.period; S.tasks.push(Object.assign({ id: uid(), reward: '', streak: 0 }, x)); save(); render(); toast('Добавлено: ' + x.title); break; }
+    case 'check-update': checkUpdate(true); break;
     case 'toggle': toggleGoal(el.dataset.set, el.dataset.goal); break;
     case 'new-set': editSet(null); break;
     case 'edit-set': editSet(el.dataset.set); break;
@@ -749,7 +947,7 @@ $('#view').addEventListener('click', async e => {
       break;
     case 'export-copy': toast(await copyText(exportJson()) ? 'Скопировано — вставьте на другом устройстве' : 'Не удалось скопировать'); break;
     case 'export-file': {
-      const name = 'celi-nagrady-' + new Date().toISOString().slice(0, 10) + '.json';
+      const name = 'ezhednevki-' + new Date().toISOString().slice(0, 10) + '.json';
       if (IN_APP && window.AndroidBridge) { window.AndroidBridge.shareFile(name, exportJson()); break; }
       try {
         const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([exportJson()], { type: 'application/json' })); a.download = name;
@@ -764,14 +962,14 @@ $('#view').addEventListener('click', async e => {
       else toast('Вставьте копию или выберите файл');
       break;
     }
-    case 'reset': confirmBox('Удалить всё?', 'Все наборы, награды, баланс и история будут удалены без возможности восстановления.', 'Удалить всё', () => { S = seed(); S.sets = []; S.ui.hideDl = true; save(); render(); toast('Данные удалены'); }, true); break;
+    case 'reset': confirmBox('Удалить всё?', 'Все наборы, награды, баланс и история будут удалены без возможности восстановления.', 'Удалить всё', () => { S = seed(); S.sets = []; S.tasks = []; S.ui.hideDl = true; save(); render(); toast('Данные удалены'); }, true); break;
   }
 });
 
 /* Кнопка «Назад» на Android */
 window.onAndroidBack = function () {
   if (window.__back) return window.__back();
-  if (S.ui.tab !== 'goals') { S.ui.tab = 'goals'; save(); render(); return true; }
+  if (S.ui.tab !== 'tasks') { S.ui.tab = 'tasks'; save(); render(); return true; }
   return false;
 };
 
@@ -794,7 +992,63 @@ if ('serviceWorker' in navigator && location.protocol === 'https:' && !IN_APP) {
   try { navigator.serviceWorker.register('sw.js').catch(() => { }); } catch (_) { }
 }
 
+/* ===================== Обновления ===================== */
+function newer(a, b) {   // a > b ?
+  const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number);
+  for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); }
+  return false;
+}
+let updShown = false;
+async function checkUpdate(manual) {
+  let info = null;
+  try {
+    const r = await fetch(UPDATE_BASE + 'version.json?t=' + Date.now(), { cache: 'no-store' });
+    if (r.ok) info = await r.json();
+  } catch (_) { }
+  if (!info || !info.version) { if (manual) toast('Не удалось проверить — нет интернета?'); return; }
+  if (!newer(info.version, APP_VERSION)) { if (manual) toast(`У вас последняя версия (${APP_VERSION})`); return; }
+  if (!manual && S.ui.skipVer === info.version) return;
+  showUpdate(info);
+}
+function showUpdate(info) {
+  if (updShown) return; updShown = true;
+  const b = document.createElement('div'); b.className = 'upd'; b.setAttribute('role', 'status');
+  b.innerHTML = `<div class="grow"><b>Доступна новая версия ${esc(info.version)}</b><small>${IN_APP ? 'Обновите приложение, чтобы получить новые функции' : 'Обновите страницу, чтобы получить новые функции'}</small></div>
+    <div class="acts">${Array.isArray(info.notes) && info.notes.length ? '<button class="btn sm" data-u="notes" style="background:transparent;color:#fff;border-color:#4a544f">Что нового</button>' : ''}
+    <button class="btn gold sm" data-u="go">Обновить</button><button class="x" data-u="x" aria-label="Позже">×</button></div>`;
+  b.addEventListener('click', e => {
+    const u = e.target.closest('[data-u]'); if (!u) return;
+    if (u.dataset.u === 'x') { S.ui.skipVer = info.version; save(); b.remove(); updShown = false; document.body.classList.remove('has-upd'); toast('Обновиться можно во вкладке «Ещё»'); }
+    if (u.dataset.u === 'notes') modal({ title: `Что нового в ${esc(info.version)}`, cancelText: 'Позже', okText: 'Обновить', body: `<ul class="notes">${info.notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul>`, onOk() { doUpdate(info); } });
+    if (u.dataset.u === 'go') doUpdate(info);
+  });
+  document.body.appendChild(b); document.body.classList.add('has-upd');
+}
+function doUpdate(info) {
+  if (IN_APP) {
+    const url = new URL(info.apk || APK_URL, new URL(UPDATE_BASE || './', location.href)).href;
+    if (window.AndroidBridge && window.AndroidBridge.openUrl) window.AndroidBridge.openUrl(url); else location.href = url;
+    toast('Скачивается новая версия — откройте файл, чтобы установить');
+  } else {
+    toast('Обновляю…');
+    const go = () => location.reload();
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
+      navigator.serviceWorker.getRegistration().then(r => r ? r.update().catch(() => { }).finally(go) : go()).catch(go);
+    } else go();
+  }
+}
+
+/* Задания обновляются сами в полночь / понедельник / 1‑е число */
+let lastDay = dayKey(new Date());
+function tick() {
+  const k = dayKey(new Date());
+  if (k !== lastDay) { lastDay = k; if (!document.querySelector('.overlay')) render(); }
+}
+setInterval(tick, 30000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { tick(); checkUpdate(false); } });
+
 save(); render();
+setTimeout(() => checkUpdate(false), 1500);
 </script>
 </body>
 </html>

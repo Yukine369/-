@@ -123,7 +123,7 @@ public class MainActivity extends Activity {
                     Intent send = new Intent(Intent.ACTION_SEND);
                     send.setType("application/json");
                     send.putExtra(Intent.EXTRA_STREAM, uri);
-                    send.putExtra(Intent.EXTRA_SUBJECT, "Резервная копия «Цели и награды»");
+                    send.putExtra(Intent.EXTRA_SUBJECT, "Резервная копия «Ежедневки»");
                     send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                     startActivity(Intent.createChooser(send, "Сохранить копию"));
                 } catch (Exception e) {
