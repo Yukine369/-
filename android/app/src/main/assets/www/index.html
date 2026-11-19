@@ -193,6 +193,26 @@ canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:70}
 .per-all{margin:4px 16px 14px;padding:10px 12px;border-radius:12px;background:var(--gold-soft);color:#6b4a00;font-weight:600;font-size:14px;text-align:center}
 .tpl{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px}
 
+/* calendar */
+.cal-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
+.cal-card{padding:14px 14px 12px}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-nav b{font:700 15px Unbounded,sans-serif;text-transform:capitalize}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.cal-grid .wd{font-size:11.5px;color:var(--muted);text-align:center;font-weight:600}
+.cal-grid button{aspect-ratio:1;border-radius:9px;border:1px solid transparent;font-size:13px;font-weight:600;padding:0;display:grid;place-items:center;font-variant-numeric:tabular-nums}
+.cl0{background:#efe8d8;color:#9a917e}.cl1{background:#dcefe2;color:#215c3f}.cl2{background:#a9d5b8;color:#15402b}.cl3{background:var(--ok);color:#fff}.cl4{background:var(--gold);color:#2a1d00}
+.cal-grid button.future{background:transparent;border-color:var(--line);color:#c4bba8}
+.cal-grid button.today{box-shadow:0 0 0 2px var(--ink)}
+.cal-grid button[aria-pressed=true]{outline:2px solid var(--green-2);outline-offset:2px}
+.legend{display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:12px}
+.legend i{width:13px;height:13px;border-radius:4px;display:inline-block}
+.day-card{padding:14px 16px;margin-top:12px}
+.day-card h3{font-size:15px;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.day-item{display:flex;gap:10px;padding:7px 0;font-size:14px;border-top:1px dashed var(--line)}
+.day-item:first-of-type{border-top:0}
+.perfect-tag{font:600 12.5px Manrope,sans-serif;color:#8a6a1c;white-space:nowrap}
+
 /* update banner */
 .upd{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(88px + var(--safe-b));z-index:40;width:min(560px,calc(100% - 24px));display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--ink);color:#fff;border-radius:16px;box-shadow:0 14px 34px -12px rgba(0,0,0,.55);animation:up .25s}
 .upd{flex-wrap:wrap}
@@ -218,6 +238,7 @@ body.has-upd .toast{bottom:calc(190px + var(--safe-b))}
   <div class="wrap">
     <nav class="tabs" role="tablist">
       <button class="tab" role="tab" data-tab="tasks">Задания</button>
+      <button class="tab" role="tab" data-tab="calendar">Календарь</button>
       <button class="tab" role="tab" data-tab="goals">Цели</button>
       <button class="tab" role="tab" data-tab="rewards">Награды</button>
       <button class="tab" role="tab" data-tab="history">История</button>
@@ -235,7 +256,7 @@ body.has-upd .toast{bottom:calc(190px + var(--safe-b))}
 const APK_URL = 'app.apk';           // файл APK рядом с сайтом (его кладёт GitHub Actions)
 const IN_APP = /GoalsAndroidApp/.test(navigator.userAgent);
 const STORE_KEY = 'goals-rewards-v1';   // ключ не меняем, чтобы сохранились старые данные
-const APP_VERSION = '2.1.1';             // при каждом выпуске повышать и здесь, и в version.json
+const APP_VERSION = '2.2.0';             // при каждом выпуске повышать и здесь, и в version.json
 // Где лежит version.json и app.apk. Пусто = рядом с этой страницей.
 // Если в APK страница вшита внутрь приложения, впишите сюда адрес сайта, например 'https://имя.github.io/ezhednevki/'
 const UPDATE_BASE = IN_APP ? 'https://yukine369.github.io/-/' : '';   // в APK страница вшита внутрь, поэтому версию проверяем на сайте
@@ -271,6 +292,8 @@ function seed() {
       { id: uid(), emoji: '💰', title: 'Отложить деньги', period: 'month', coins: 80, reward: '' },
     ],
     taskStats: { done: 0 },
+    days: {},
+    perfectBonus: 20,
     shop: [
       { id: uid(), emoji: '🎬', title: 'Вечер кино', cost: 60 },
       { id: uid(), emoji: '🍕', title: 'Любимая пицца', cost: 120 },
@@ -301,6 +324,8 @@ function normalize(s) {
   s.tasks = Array.isArray(s.tasks) ? s.tasks : [];
   s.tasks.forEach(t => { if (!['day', 'week', 'month'].includes(t.period)) t.period = 'day'; t.coins = +t.coins || 0; t.streak = +t.streak || 0; });
   s.taskStats = Object.assign({ done: 0 }, s.taskStats || {});
+  s.days = s.days && typeof s.days === 'object' ? s.days : {};
+  s.perfectBonus = s.perfectBonus == null ? 20 : Math.max(0, +s.perfectBonus || 0);
   s.ui = Object.assign({ tab: 'goals', hideDl: false }, s.ui || {});
   s.balance = Number(s.balance) || 0;
   s.sets.forEach(x => {
@@ -439,6 +464,47 @@ function resetsIn(period) {
   return `обновится через ${Math.max(1, Math.ceil(ms / 60000))} мин`;
 }
 
+/* ===================== Календарь: запись по дням ===================== */
+function dayRec(key) { return S.days[key] || (S.days[key] = { items: [], total: 0, done: 0, bonus: 0 }); }
+// обновить запись сегодняшнего дня; возвращает true, если только что стал идеальным
+function syncToday() {
+  const daily = S.tasks.filter(t => t.period === 'day');
+  const key = dayKey(new Date());
+  if (!daily.length && !S.days[key]) return false;
+  const r = dayRec(key);
+  r.total = daily.length; r.done = daily.filter(taskDone).length;
+  if (r.total && r.done === r.total && !r.bonus && !r.perfect) {
+    r.perfect = true; r.bonus = S.perfectBonus;
+    if (r.bonus) changeBalance(r.bonus, 'Идеальный день'); else addLog('Идеальный день', 0);
+    return true;
+  }
+  return false;
+}
+function perfectStreak() {
+  let n = 0; const d = new Date();
+  const today = S.days[dayKey(d)];
+  if (!(today && today.perfect)) d.setDate(d.getDate() - 1);   // сегодня ещё не закончился
+  for (;;) { const r = S.days[dayKey(d)]; if (r && r.perfect) { n++; d.setDate(d.getDate() - 1); } else break; }
+  return n;
+}
+function bestStreak() {
+  const keys = Object.keys(S.days).filter(k => S.days[k].perfect).sort();
+  let best = 0, cur = 0, prev = null;
+  for (const k of keys) {
+    const d = new Date(k + 'T12:00:00');
+    if (prev) { const p = new Date(prev); p.setDate(p.getDate() + 1); cur = dayKey(p) === k ? cur + 1 : 1; } else cur = 1;
+    best = Math.max(best, cur); prev = d;
+  }
+  return best;
+}
+function dayLevel(r) {
+  if (!r || !r.total) return 0;
+  if (r.perfect && r.done === r.total) return 4;
+  if (r.perfect) return 3;
+  const f = r.done / r.total;
+  return f === 0 ? 0 : f < 0.34 ? 1 : f < 0.67 ? 2 : 3;
+}
+
 function toggleTask(id) {
   const t = S.tasks.find(x => x.id === id); if (!t) return;
   const cur = periodKey(t.period);
@@ -447,14 +513,24 @@ function toggleTask(id) {
     if (t.coins) changeBalance(-t.coins, `Отменено задание: ${t.title}`);
     const i = S.prizes.findIndex(p => p.ref === t.id + cur && !p.used); if (i >= 0) S.prizes.splice(i, 1);
     S.taskStats.done = Math.max(0, S.taskStats.done - 1);
+    for (const k of Object.keys(S.days)) {   // убрать отметку из календаря
+      const r = S.days[k], j = r.items.findIndex(x => x.id === t.id && x.pk === cur);
+      if (j >= 0) { r.items.splice(j, 1); break; }
+    }
+    if (t.period === 'day') {
+      const r = S.days[dayKey(new Date())];
+      if (r && r.perfect) { r.perfect = false; if (r.bonus) changeBalance(-r.bonus, 'Отменён идеальный день'); r.bonus = 0; }
+    }
   } else {
     t.prevDoneKey = t.doneKey || null; t.prevStreak = t.streak || 0;
     t.streak = t.doneKey === prevPeriodKey(t.period) ? (t.streak || 0) + 1 : 1;
     t.doneKey = cur; S.taskStats.done++;
+    dayRec(dayKey(new Date())).items.push({ id: t.id, pk: cur, title: t.title, emoji: t.emoji || '', period: t.period, coins: t.coins, at: now() });
     if (t.coins) changeBalance(t.coins, `Задание: ${t.title}`); else addLog(`Задание: ${t.title}`, 0);
     if (t.reward) addPrize(t.reward, `за задание «${t.title}»`, t.id + cur, '🎁');
     const group = S.tasks.filter(x => x.period === t.period);
-    if (group.length > 1 && group.every(taskDone)) { confetti(90); toast(`Все ${PERIODS[t.period].title.toLowerCase()} выполнены! 🎉`); }
+    if (t.period === 'day' && syncToday()) { confetti(); toast(`Идеальный день! ${S.perfectBonus ? '+' + coin(S.perfectBonus) + ' ' : ''}🌟`); }
+    else if (group.length > 1 && group.every(taskDone)) { confetti(90); toast(`Все ${PERIODS[t.period].title.toLowerCase()} выполнены! 🎉`); }
     else toast(`+${coin(t.coins)}${t.streak > 1 ? ' · серия ' + t.streak + ' 🔥' : ''}`);
   }
   save(); render();
@@ -550,8 +626,57 @@ function editTask(id, period) {
   });
 }
 
+function viewCalendar() {
+  const now_ = new Date(), todayKey = dayKey(now_);
+  const [y, m] = (S.ui.calMonth || todayKey.slice(0, 7)).split('-').map(Number);
+  const first = new Date(y, m - 1, 1), daysIn = new Date(y, m, 0).getDate();
+  const offset = (first.getDay() + 6) % 7;
+  const keys = Object.keys(S.days).filter(k => S.days[k].total).sort();
+  const startKey = keys[0] || todayKey;
+  // процент за месяц: среднее по дням с начала учёта до сегодня; пропущенные дни считаются как 0
+  let sum = 0, cnt = 0;
+  for (let d = 1; d <= daysIn; d++) {
+    const k = `${y}-${pad(m)}-${pad(d)}`;
+    if (k < startKey || k > todayKey) continue;
+    const r = S.days[k]; cnt++; if (r && r.total) sum += Math.min(1, r.done / r.total);
+  }
+  const monthPct = cnt ? Math.round(sum / cnt * 100) : 0;
+  const streak = perfectStreak(), best = bestStreak();
+  const sel = S.ui.calDay || todayKey;
+  let cells = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'].map(w => `<div class="wd">${w}</div>`).join('');
+  for (let i = 0; i < offset; i++) cells += '<div></div>';
+  for (let d = 1; d <= daysIn; d++) {
+    const k = `${y}-${pad(m)}-${pad(d)}`, r = S.days[k], fut = k > todayKey;
+    cells += `<button type="button" data-act="cal-day" data-k="${k}" class="${fut ? 'future' : 'cl' + dayLevel(r)}${k === todayKey ? ' today' : ''}" aria-pressed="${k === sel}" ${fut ? 'disabled' : ''} aria-label="${d}">${d}</button>`;
+  }
+  const monthName = first.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' }).replace(' г.', '');
+  const isCur = `${y}-${pad(m)}` === todayKey.slice(0, 7);
+  // выбранный день
+  const r = S.days[sel], selDate = new Date(sel + 'T12:00:00');
+  const selTitle = selDate.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
+  let dayHtml;
+  if (!r || (!r.items.length && !r.total)) dayHtml = `<p class="muted" style="margin:8px 0 0;font-size:14px">${sel < startKey ? 'Календарь тогда ещё не вёлся.' : sel === todayKey ? 'Сегодня пока ничего не отмечено.' : 'В этот день ничего не отмечено.'}</p>`;
+  else dayHtml = `${r.total ? `<p class="muted" style="margin:4px 0 8px;font-size:13px">Ежедневных выполнено: ${r.done} из ${r.total}</p>` : ''}
+    ${r.items.map(x => `<div class="day-item"><span style="color:var(--ok);font-weight:800">✓</span><span style="flex:1">${esc(x.emoji)} ${esc(x.title)}${x.period !== 'day' ? ` <span class="pill">${x.period === 'week' ? 'неделя' : 'месяц'}</span>` : ''}</span><span class="coins">+${coin(x.coins)}</span></div>`).join('')}`;
+  return `<div class="cal-stats">
+      <div class="card stat"><b>🔥 ${streak}</b><span>${plural(streak, 'идеальный день', 'идеальных дня', 'идеальных дней')} подряд · рекорд ${best}</span></div>
+      <div class="card stat"><b>${monthPct}%</b><span>ежедневных выполнено за месяц</span></div>
+    </div>
+    <div class="card cal-card">
+      <div class="cal-nav"><button class="icon-btn" data-act="cal-month" data-d="-1" aria-label="Предыдущий месяц">‹</button><b>${esc(monthName)}</b><button class="icon-btn" data-act="cal-month" data-d="1" aria-label="Следующий месяц" ${isCur ? 'disabled style="opacity:.3"' : ''}>›</button></div>
+      <div class="cal-grid">${cells}</div>
+      <div class="legend">меньше <i class="cl0"></i><i class="cl1"></i><i class="cl2"></i><i class="cl3"></i> больше · <i class="cl4"></i> идеальный день</div>
+    </div>
+    <div class="card day-card"><h3><span>${esc(selTitle.charAt(0).toUpperCase() + selTitle.slice(1))}</span>${r && r.perfect ? `<span class="perfect-tag">🌟 идеальный${r.bonus ? ' +' + fmt(r.bonus) : ''}</span>` : ''}</h3>${dayHtml}</div>
+    <div class="card form-card mt" style="display:flex;align-items:center;gap:12px">
+      <div style="flex:1;font-size:14px"><b>Бонус за идеальный день</b><div class="muted" style="font-size:12.5px">когда выполнены все ежедневные задания</div></div>
+      <button class="btn sm" data-act="perfect-bonus">${S.perfectBonus ? '+' + coin(S.perfectBonus) : 'выкл.'} ✎</button>
+    </div>`;
+}
+
 /* ===================== Рендер ===================== */
 function render() {
+  syncToday();
   $('#balVal').textContent = fmt(S.balance);
   $('#balIcon').textContent = S.coin.icon;
   document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', t.dataset.tab === S.ui.tab));
@@ -559,7 +684,7 @@ function render() {
   fab.classList.toggle('hidden', !['tasks', 'goals', 'rewards'].includes(S.ui.tab));
   fab.textContent = { tasks: '＋ Новое задание', rewards: '＋ Награда в магазин', goals: '＋ Новый набор целей' }[S.ui.tab] || '';
   const v = $('#view');
-  v.innerHTML = (({ tasks: viewTasks, goals: viewGoals, rewards: viewRewards, history: viewHistory, more: viewMore })[S.ui.tab] || viewTasks)();
+  v.innerHTML = (({ tasks: viewTasks, calendar: viewCalendar, goals: viewGoals, rewards: viewRewards, history: viewHistory, more: viewMore })[S.ui.tab] || viewTasks)();
 }
 
 function dlBanner() {
@@ -896,7 +1021,7 @@ function importJson(text) {
 
 /* ===================== События ===================== */
 document.querySelector('.tabs').addEventListener('click', e => {
-  const t = e.target.closest('.tab'); if (!t) return; S.ui.tab = t.dataset.tab; save(); render(); window.scrollTo(0, 0);
+  const t = e.target.closest('.tab'); if (!t) return; if (t.dataset.tab === 'calendar') { S.ui.calDay = null; S.ui.calMonth = null; } S.ui.tab = t.dataset.tab; save(); render(); window.scrollTo(0, 0);
 });
 $('#fab').addEventListener('click', () => S.ui.tab === 'rewards' ? editShop(null) : S.ui.tab === 'tasks' ? editTask(null, S.ui.per) : editSet(null));
 document.addEventListener('keydown', e => {
@@ -911,6 +1036,15 @@ $('#view').addEventListener('click', async e => {
     case 'toggle-task': toggleTask(el.dataset.id); break;
     case 'new-task': editTask(null, el.dataset.period || S.ui.per); break;
     case 'per': S.ui.per = el.dataset.p; save(); render(); break;
+    case 'cal-day': S.ui.calDay = el.dataset.k; render(); break;
+    case 'cal-month': {
+      const [y, m] = (S.ui.calMonth || dayKey(new Date()).slice(0, 7)).split('-').map(Number);
+      const d = new Date(y, m - 1 + (+el.dataset.d), 1); S.ui.calMonth = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; render(); break;
+    }
+    case 'perfect-bonus':
+      modal({ title: 'Бонус за идеальный день', okText: 'Сохранить', body: `<label class="field"><span>Сколько ${esc(S.coin.name)} давать</span><input class="inp" type="number" min="0" id="pbV" value="${S.perfectBonus}"><small>0 — без бонуса. Действует с сегодняшнего дня.</small></label>`,
+        onOk(o) { S.perfectBonus = Math.max(0, Math.round(+$('#pbV', o).value || 0)); save(); render(); toast('Сохранено'); } });
+      break;
     case 'tpl': { const x = TEMPLATES[+el.dataset.i]; S.ui.per = x.period; S.tasks.push(Object.assign({ id: uid(), reward: '', streak: 0 }, x)); save(); render(); toast('Добавлено: ' + x.title); break; }
     case 'check-update': checkUpdate(true); break;
     case 'toggle': toggleGoal(el.dataset.set, el.dataset.goal); break;

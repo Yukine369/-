@@ -1,5 +1,5 @@
 // Офлайн-кэш для сайта «Ежедневки». При выпуске новой версии меняйте имя кэша.
-const CACHE = 'ezhednevki-v2.1.1';
+const CACHE = 'ezhednevki-v2.2.0';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k))))); self.clients.claim(); });
