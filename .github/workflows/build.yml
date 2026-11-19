@@ -45,7 +45,13 @@ jobs:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
           if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            # убираем пробелы и переносы строк, которые часто попадают при копировании
+            printf '%s' "$KEYSTORE_BASE64" | tr -d ' \r\n\t' > "$RUNNER_TEMP/ks.b64"
+            echo "Длина строки ключа: $(wc -c < "$RUNNER_TEMP/ks.b64") символов"
+            if ! base64 -d "$RUNNER_TEMP/ks.b64" > "$RUNNER_TEMP/release.jks"; then
+              echo "::error::Секрет KEYSTORE_BASE64 повреждён — скопируйте строку из СЕКРЕТЫ_ДЛЯ_GITHUB.txt заново, целиком"
+              exit 1
+            fi
             echo "KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
           else
             echo "::warning::Секрет KEYSTORE_BASE64 не задан — APK подписан отладочным ключом"
