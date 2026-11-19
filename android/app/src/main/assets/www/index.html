@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Цели и награды</title>
+<meta name="theme-color" content="#1f3d34">
+<meta name="description" content="Ставь цели, назначай себе награды и получай бонус за выполнение.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4efe4; --paper:#fffaf0; --ink:#1d2622; --muted:#6b7068; --line:#e3dac8;
+  --green:#1f3d34; --green-2:#2f5a4c; --gold:#e0a526; --gold-soft:#fbecc4;
+  --red:#b9452f; --ok:#2e7d55; --ok-soft:#dcefe2;
+  --r:18px; --shadow:0 1px 0 rgba(0,0,0,.04), 0 8px 24px -14px rgba(31,61,52,.35);
+  --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 Manrope,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent;min-height:100vh}
+h1,h2,h3{font-family:Unbounded,Manrope,system-ui,sans-serif;font-weight:700;letter-spacing:-.01em;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px}
+
+/* top bar */
+.top{position:sticky;top:0;z-index:20;background:var(--green);color:#f7f1e3;padding:calc(12px + var(--safe-t)) 0 0}
+.top .wrap{display:flex;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.brand .logo{width:34px;height:34px;border-radius:10px;background:var(--gold);display:grid;place-items:center;color:var(--green);font:700 18px Unbounded,sans-serif;flex:none}
+.brand h1{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.balance{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);padding:6px 12px 6px 8px;border-radius:999px;font-weight:700;font-variant-numeric:tabular-nums}
+.balance .ic{font-size:18px}
+.balance.bump{animation:bump .5s}
+@keyframes bump{40%{transform:scale(1.12);background:rgba(224,165,38,.4)}}
+.tabs{display:flex;gap:4px;margin-top:12px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{background:none;border:0;color:#cfd8cf;padding:10px 14px 12px;font-weight:600;border-bottom:3px solid transparent;white-space:nowrap}
+.tab[aria-selected=true]{color:#fff;border-bottom-color:var(--gold)}
+
+main{padding:18px 0 calc(110px + var(--safe-b))}
+.section-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:22px 2px 10px}
+.section-h h2{font-size:15px;text-transform:uppercase;letter-spacing:.04em;color:var(--green-2)}
+.section-h .hint{color:var(--muted);font-size:13px}
+
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.empty{padding:28px 20px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--ink);font-size:17px;margin-bottom:4px}
+
+/* download banner */
+.dl{display:flex;gap:14px;align-items:center;padding:14px 16px;background:linear-gradient(120deg,#244a3e,#1f3d34);color:#f6efe0;border:0;margin-bottom:6px}
+.dl .robot{width:44px;height:44px;flex:none;border-radius:12px;background:rgba(255,255,255,.1);display:grid;place-items:center}
+.dl p{margin:2px 0 0;color:#c8d3c9;font-size:13px}
+.dl .grow{flex:1;min-width:0}
+.dl .x{background:none;border:0;color:#9fb1a5;font-size:20px;padding:4px 6px}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 14px;font-weight:600;text-decoration:none;color:var(--ink);transition:transform .08s}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--green);color:#fff;border-color:var(--green)}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:#2a1d00}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--red);border-color:#efc9bf;background:#fff}
+.btn.sm{padding:7px 10px;font-size:14px;border-radius:10px}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.fab{position:fixed;right:max(16px,calc(50% - 364px));bottom:calc(20px + var(--safe-b));z-index:15;border-radius:16px;padding:14px 20px;box-shadow:0 10px 24px -8px rgba(31,61,52,.6);font-size:16px}
+
+/* goal set */
+.set{margin-bottom:14px;overflow:hidden}
+.set-head{padding:16px 16px 12px;display:flex;gap:12px;align-items:flex-start}
+.set-emoji{width:44px;height:44px;border-radius:14px;background:var(--gold-soft);display:grid;place-items:center;font-size:24px;flex:none}
+.set-title{flex:1;min-width:0}
+.set-title h3{font-size:17px;line-height:1.25}
+.meta{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:6px;color:var(--muted);font-size:13px}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;background:#efe8d8;font-weight:600;font-size:12px;color:#5b5446}
+.pill.late{background:#f6dcd4;color:var(--red)}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.icon-btn{background:none;border:0;padding:6px;border-radius:10px;color:var(--muted);font-size:18px;line-height:1}
+.icon-btn:hover{background:#efe8d8}
+.progress{margin:0 16px;height:10px;border-radius:99px;background:#ece4d2;overflow:hidden}
+.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--green-2),var(--ok));border-radius:99px;transition:width .4s}
+.progress.full i{background:linear-gradient(90deg,#d99a1a,var(--gold))}
+.prog-label{display:flex;justify-content:space-between;margin:6px 16px 4px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+.goals{list-style:none;margin:8px 0 0;padding:0}
+.goal{display:flex;align-items:center;gap:12px;padding:11px 16px;border-top:1px dashed var(--line)}
+.check{width:28px;height:28px;flex:none;border-radius:9px;border:2px solid #b9b19f;background:#fff;display:grid;place-items:center;color:transparent;font-size:16px;font-weight:800;transition:.15s}
+.goal.done .check{background:var(--ok);border-color:var(--ok);color:#fff}
+.goal .g-title{flex:1;min-width:0}
+.goal.done .g-title span:first-child{text-decoration:line-through;color:var(--muted)}
+.g-reward{display:block;font-size:12.5px;color:#8a6a1c}
+.coins{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--green-2);font-size:14px}
+.closed .check{pointer-events:none}
+
+.bonus{margin:10px 16px 0;padding:12px 14px;border-radius:14px;background:#faf3e1;border:1px solid #f0e2bd;font-size:14px}
+.bonus-row{display:flex;gap:8px;align-items:flex-start}
+.bonus-row + .bonus-row{margin-top:6px}
+.bonus-row .b-ic{width:20px;flex:none;text-align:center}
+.bonus-row.dim{color:var(--muted)}
+.set-foot{display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px 16px}
+.set-foot .btn{flex:1;min-width:140px}
+.result{margin:10px 16px 0;padding:12px 14px;border-radius:14px;font-weight:600;font-size:14px}
+.result.all{background:var(--gold-soft);color:#6b4a00}
+.result.partial{background:var(--ok-soft);color:var(--ok)}
+.result.none{background:#efe8d8;color:var(--muted)}
+
+details.archive > summary{list-style:none;cursor:pointer;color:var(--green-2);font-weight:700;padding:10px 2px}
+details.archive > summary::-webkit-details-marker{display:none}
+
+/* rewards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.shop-item{padding:14px;display:flex;flex-direction:column;gap:8px;position:relative}
+.shop-item .em{font-size:30px}
+.shop-item .t{font-weight:700;line-height:1.25;flex:1}
+.shop-item .cost{font-weight:700;color:var(--green-2)}
+.shop-item .edit{position:absolute;top:8px;right:8px}
+.prize{display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid var(--line)}
+.prize:first-child{border-top:0}
+.prize .em{font-size:22px;width:28px;text-align:center}
+.prize .t{flex:1;min-width:0}
+.prize .t small{display:block;color:var(--muted);font-size:12.5px}
+.prize.used{opacity:.55}
+.prize.used .t span{text-decoration:line-through}
+
+/* history */
+.log{padding:4px 0}
+.log-row{display:flex;gap:12px;padding:10px 16px;border-top:1px solid var(--line);font-size:14px}
+.log-row:first-child{border-top:0}
+.log-row time{color:var(--muted);font-size:12.5px;white-space:nowrap;min-width:84px;font-variant-numeric:tabular-nums}
+.log-row .tx{flex:1}
+.delta{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.delta.p{color:var(--ok)} .delta.m{color:var(--red)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{padding:14px}
+.stat b{display:block;font:700 22px Unbounded,sans-serif;color:var(--green)}
+.stat span{font-size:12.5px;color:var(--muted)}
+
+/* settings */
+.form-card{padding:16px}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.field > span{font-size:13px;font-weight:700;color:var(--green-2)}
+.field small{color:var(--muted);font-size:12.5px}
+.inp{width:100%;border:1px solid #d9cfba;background:#fff;border-radius:12px;padding:10px 12px;outline:none;min-width:0}
+.inp:focus{border-color:var(--green-2);box-shadow:0 0 0 3px rgba(47,90,76,.15)}
+textarea.inp{min-height:110px;resize:vertical;font-family:ui-monospace,Menlo,monospace;font-size:12.5px}
+.row{display:flex;gap:10px}
+.row > *{flex:1}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+
+/* modal */
+.overlay{position:fixed;inset:0;z-index:50;background:rgba(18,28,24,.45);display:flex;align-items:flex-end;justify-content:center;animation:fade .15s}
+@media (min-width:640px){.overlay{align-items:center;padding:20px}}
+@keyframes fade{from{opacity:0}}
+.sheet{background:var(--paper);width:100%;max-width:620px;max-height:92vh;border-radius:22px 22px 0 0;display:flex;flex-direction:column;animation:up .2s ease-out}
+@media (min-width:640px){.sheet{border-radius:22px}}
+@keyframes up{from{transform:translateY(30px);opacity:.4}}
+.sheet-h{display:flex;align-items:center;gap:10px;padding:16px 18px 10px}
+.sheet-h h3{flex:1;font-size:17px}
+.sheet-b{padding:4px 18px 10px;overflow:auto}
+.sheet-f{display:flex;gap:10px;padding:12px 18px calc(16px + var(--safe-b));border-top:1px solid var(--line)}
+.sheet-f .btn{flex:1}
+.goal-edit{display:grid;grid-template-columns:1fr 84px 34px;gap:6px;padding:10px;border:1px solid var(--line);border-radius:14px;background:#fff;margin-bottom:8px}
+.goal-edit .rw{grid-column:1/3}
+.goal-edit .del{grid-row:1/3;grid-column:3;align-self:center}
+.seg{display:flex;background:#ece4d2;border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:none;padding:8px 6px;border-radius:9px;font-weight:600;font-size:13.5px;color:#5b5446}
+.seg button[aria-pressed=true]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.box{border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px;background:#fffdf7}
+.box h4{margin:0 0 10px;font-size:14px}
+.preview{font-size:13px;background:var(--ok-soft);color:#215c3f;padding:8px 10px;border-radius:10px}
+.emoji-pick{display:flex;flex-wrap:wrap;gap:6px}
+.emoji-pick button{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:#fff;font-size:20px}
+.emoji-pick button[aria-pressed=true]{border-color:var(--green);box-shadow:0 0 0 2px var(--green) inset;background:var(--gold-soft)}
+
+.toast{position:fixed;left:50%;bottom:calc(92px + var(--safe-b));transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;z-index:60;font-weight:600;font-size:14px;max-width:90vw;box-shadow:0 10px 30px -10px rgba(0,0,0,.5);animation:up .2s}
+canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:70}
+.muted{color:var(--muted)}
+.mt{margin-top:12px}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><div class="logo">✓</div><h1>Цели и награды</h1></div>
+    <div class="balance" id="balance" title="Ваш баланс"><span class="ic" id="balIcon">🪙</span><span id="balVal">0</span></div>
+  </div>
+  <div class="wrap">
+    <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" data-tab="goals">Цели</button>
+      <button class="tab" role="tab" data-tab="rewards">Награды</button>
+      <button class="tab" role="tab" data-tab="history">История</button>
+      <button class="tab" role="tab" data-tab="more">Ещё</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap" id="view"></main>
+<button class="btn primary fab" id="fab">＋ Новый набор целей</button>
+<canvas id="confetti" class="hidden"></canvas>
+
+<script>
+/* ===================== Настройки сборки ===================== */
+const APK_URL = 'app.apk';           // файл APK рядом с сайтом (его кладёт GitHub Actions)
+const IN_APP = /GoalsAndroidApp/.test(navigator.userAgent);
+const STORE_KEY = 'goals-rewards-v1';
+
+/* ===================== Состояние ===================== */
+const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+const now = () => Date.now();
+
+function seed() {
+  const d = new Date(); d.setDate(d.getDate() + 7);
+  return {
+    v: 1,
+    coin: { icon: '🪙', name: 'монет' },
+    balance: 0,
+    sets: [{
+      id: uid(), emoji: '🏃', title: 'Полезная неделя', deadline: d.toISOString().slice(0, 10),
+      createdAt: now(), status: 'active', result: null,
+      goals: [
+        { id: uid(), title: '3 тренировки', coins: 30, reward: '', done: false },
+        { id: uid(), title: 'Прочитать 100 страниц', coins: 20, reward: '', done: false },
+        { id: uid(), title: 'Лечь спать до 23:30 пять раз', coins: 25, reward: 'Утро без будильника', done: false },
+        { id: uid(), title: 'Разобрать рабочий стол', coins: 10, reward: '', done: false },
+      ],
+      bonusAll: { coins: 100, reward: 'Поход в кино' },
+      partial: { mode: 'proportional', percent: 75, coins: 40, reward: '', minPercent: 50 },
+    }],
+    shop: [
+      { id: uid(), emoji: '🎬', title: 'Вечер кино', cost: 60 },
+      { id: uid(), emoji: '🍕', title: 'Любимая пицца', cost: 120 },
+      { id: uid(), emoji: '🎮', title: 'Новая игра', cost: 400 },
+      { id: uid(), emoji: '😴', title: 'День без дел', cost: 250 },
+    ],
+    prizes: [],
+    log: [],
+    ui: { tab: 'goals', hideDl: false },
+  };
+}
+
+let storageOk = true;
+function load() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) { const s = JSON.parse(raw); if (s && s.v === 1) return normalize(s); }
+  } catch (e) { storageOk = false; }
+  return seed();
+}
+function normalize(s) {
+  const base = seed();
+  s.coin = Object.assign({}, base.coin, s.coin || {});
+  s.sets = Array.isArray(s.sets) ? s.sets : [];
+  s.shop = Array.isArray(s.shop) ? s.shop : [];
+  s.prizes = Array.isArray(s.prizes) ? s.prizes : [];
+  s.log = Array.isArray(s.log) ? s.log : [];
+  s.ui = Object.assign({ tab: 'goals', hideDl: false }, s.ui || {});
+  s.balance = Number(s.balance) || 0;
+  s.sets.forEach(x => {
+    x.goals = Array.isArray(x.goals) ? x.goals : [];
+    x.bonusAll = Object.assign({ coins: 0, reward: '' }, x.bonusAll || {});
+    x.partial = Object.assign({ mode: 'none', percent: 75, coins: 0, reward: '', minPercent: 50 }, x.partial || {});
+  });
+  return s;
+}
+let S = load();
+function save() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); storageOk = true; } catch (e) { storageOk = false; }
+}
+
+/* ===================== Утилиты ===================== */
+const $ = (q, el = document) => el.querySelector(q);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = n => Math.round(n).toLocaleString('ru-RU');
+const coin = n => `${fmt(n)} ${S.coin.icon}`;
+function plural(n, a, b, c) { n = Math.abs(n) % 100; const n1 = n % 10; if (n > 10 && n < 20) return c; if (n1 > 1 && n1 < 5) return b; if (n1 === 1) return a; return c; }
+function dateRu(ts) { return new Date(ts).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }); }
+function timeRu(ts) { const d = new Date(ts); return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }); }
+function daysLeft(iso) {
+  if (!iso) return null;
+  const end = new Date(iso + 'T23:59:59'); return Math.ceil((end - new Date()) / 86400000) - 1;
+}
+
+function addLog(text, delta = 0) { S.log.unshift({ at: now(), text, delta }); if (S.log.length > 500) S.log.length = 500; }
+function changeBalance(delta, text) {
+  S.balance += delta; addLog(text, delta);
+  const b = $('#balance'); b.classList.remove('bump'); void b.offsetWidth; if (delta) b.classList.add('bump');
+}
+function addPrize(title, source, ref, emoji = '🎁') { S.prizes.unshift({ id: uid(), title, source, ref: ref || null, emoji, at: now(), used: false }); }
+
+let toastTimer;
+function toast(msg) {
+  document.querySelectorAll('.toast').forEach(t => t.remove());
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.remove(), 2600);
+}
+
+/* ===================== Логика наград ===================== */
+function progress(set) {
+  const total = set.goals.length, done = set.goals.filter(g => g.done).length;
+  return { total, done, frac: total ? done / total : 0 };
+}
+// Что человек получит, если подвести итог прямо сейчас
+function computeBonus(set) {
+  const { total, done, frac } = progress(set);
+  const pct = Math.round(frac * 100);
+  if (total && done === total) return { kind: 'all', coins: +set.bonusAll.coins || 0, reward: set.bonusAll.reward || '', pct };
+  const p = set.partial;
+  if (p.mode === 'threshold' && pct >= p.percent && done > 0)
+    return { kind: 'partial', coins: +p.coins || 0, reward: p.reward || '', pct };
+  if (p.mode === 'proportional' && pct >= p.minPercent && done > 0)
+    return { kind: 'partial', coins: Math.round((+set.bonusAll.coins || 0) * frac), reward: p.reward || '', pct };
+  return { kind: 'none', coins: 0, reward: '', pct };
+}
+function partialText(set) {
+  const p = set.partial, full = +set.bonusAll.coins || 0;
+  if (p.mode === 'threshold') return `Если выполнено от ${p.percent}% — ${coin(+p.coins || 0)}${p.reward ? ' и «' + esc(p.reward) + '»' : ''}`;
+  if (p.mode === 'proportional') return `Если выполнено от ${p.minPercent}% — часть бонуса по доле выполненного (из ${coin(full)})${p.reward ? ' и «' + esc(p.reward) + '»' : ''}`;
+  return 'Частичное выполнение — без бонуса';
+}
+
+function toggleGoal(setId, goalId) {
+  const set = S.sets.find(s => s.id === setId); if (!set || set.status !== 'active') return;
+  const g = set.goals.find(x => x.id === goalId); if (!g) return;
+  g.done = !g.done;
+  if (g.done) {
+    g.doneAt = now();
+    if (+g.coins) changeBalance(+g.coins, `Выполнено: ${g.title}`); else addLog(`Выполнено: ${g.title}`, 0);
+    if (g.reward) addPrize(g.reward, `за «${g.title}»`, g.id, '🎁');
+    const p = progress(set);
+    if (p.done === p.total) { confetti(); toast('Все цели набора выполнены! Заберите главный приз 🏆'); }
+    else toast(`+${coin(+g.coins || 0)}${g.reward ? ' и награда «' + g.reward + '»' : ''}`);
+  } else {
+    g.doneAt = null;
+    if (+g.coins) changeBalance(-(+g.coins), `Отменено: ${g.title}`);
+    const i = S.prizes.findIndex(p => p.ref === g.id && !p.used); if (i >= 0) S.prizes.splice(i, 1);
+  }
+  save(); render();
+}
+
+function finalizeSet(set) {
+  const b = computeBonus(set);
+  set.status = 'closed'; set.closedAt = now(); set.result = b;
+  if (b.coins) changeBalance(b.coins, `${b.kind === 'all' ? 'Главный приз' : 'Частичный бонус'}: ${set.title}`);
+  else addLog(`Итог подведён: ${set.title} (${b.pct}%)`, 0);
+  if (b.reward) addPrize(b.reward, `${b.kind === 'all' ? 'главный приз' : 'бонус'} набора «${set.title}»`, null, b.kind === 'all' ? '🏆' : '🥈');
+  if (b.kind === 'all') confetti();
+  save(); render();
+}
+
+function restartSet(set) {
+  const copy = JSON.parse(JSON.stringify(set));
+  copy.id = uid(); copy.status = 'active'; copy.result = null; copy.closedAt = null; copy.createdAt = now();
+  copy.goals.forEach(g => { g.id = uid(); g.done = false; g.doneAt = null; });
+  if (set.deadline && set.createdAt) {
+    const span = Math.max(1, Math.round((new Date(set.deadline) - new Date(new Date(set.createdAt).toISOString().slice(0, 10))) / 86400000));
+    const d = new Date(); d.setDate(d.getDate() + span); copy.deadline = d.toISOString().slice(0, 10);
+  }
+  S.sets.unshift(copy); addLog(`Новый круг: ${copy.title}`, 0); save(); render(); toast('Набор запущен заново');
+}
+
+/* ===================== Рендер ===================== */
+function render() {
+  $('#balVal').textContent = fmt(S.balance);
+  $('#balIcon').textContent = S.coin.icon;
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', t.dataset.tab === S.ui.tab));
+  const fab = $('#fab');
+  fab.classList.toggle('hidden', !(S.ui.tab === 'goals' || S.ui.tab === 'rewards'));
+  fab.textContent = S.ui.tab === 'rewards' ? '＋ Награда в магазин' : '＋ Новый набор целей';
+  const v = $('#view');
+  v.innerHTML = ({ goals: viewGoals, rewards: viewRewards, history: viewHistory, more: viewMore })[S.ui.tab]();
+}
+
+function dlBanner() {
+  if (IN_APP || S.ui.hideDl) return '';
+  return `<div class="card dl" id="dlBanner">
+    <div class="robot">${androidSvg(26)}</div>
+    <div class="grow"><b>Приложение для Android</b><p>Те же цели и награды — в телефоне, работает без интернета.</p></div>
+    <a class="btn gold sm" href="${APK_URL}" data-act="apk">Скачать</a>
+    <button class="x" data-act="hide-dl" aria-label="Скрыть">×</button>
+  </div>`;
+}
+function androidSvg(s) {
+  return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="#a4d96c" aria-hidden="true"><path d="M6 18c0 .55.45 1 1 1h1v3.5a1.5 1.5 0 0 0 3 0V19h2v3.5a1.5 1.5 0 0 0 3 0V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8A1.5 1.5 0 0 0 2 9.5v7a1.5 1.5 0 0 0 3 0v-7A1.5 1.5 0 0 0 3.5 8zm17 0A1.5 1.5 0 0 0 19 9.5v7a1.5 1.5 0 0 0 3 0v-7A1.5 1.5 0 0 0 20.5 8zm-4.97-5.84 1.3-1.3a.5.5 0 0 0-.7-.71l-1.48 1.48A5.96 5.96 0 0 0 12 1c-.96 0-1.86.23-2.66.63L7.85.15a.5.5 0 0 0-.7.7l1.31 1.31A5.97 5.97 0 0 0 6 7h12a5.97 5.97 0 0 0-2.47-4.84zM10 5H9V4h1v1zm5 0h-1V4h1v1z"/></svg>`;
+}
+
+function viewGoals() {
+  const active = S.sets.filter(s => s.status === 'active');
+  const closed = S.sets.filter(s => s.status === 'closed');
+  let h = dlBanner();
+  h += `<div class="section-h"><h2>Активные наборы</h2><span class="hint">${active.length ? 'нажмите на цель, чтобы отметить' : ''}</span></div>`;
+  if (!active.length) h += `<div class="card empty"><b>Пока нет целей</b>Создайте набор: несколько целей, награда за каждую и большой приз за все сразу.<div class="mt"><button class="btn primary" data-act="new-set">Создать набор</button></div></div>`;
+  h += active.map(setCard).join('');
+  if (closed.length) h += `<details class="archive"><summary>Завершённые наборы (${closed.length}) ▾</summary>${closed.map(setCard).join('')}</details>`;
+  if (!storageOk) h += `<p class="muted" style="font-size:13px">⚠️ Браузер не даёт сохранять данные — прогресс пропадёт после закрытия страницы. Сделайте резервную копию во вкладке «Ещё».</p>`;
+  return h;
+}
+
+function setCard(set) {
+  const p = progress(set), pct = Math.round(p.frac * 100), closed = set.status === 'closed';
+  const dl = daysLeft(set.deadline);
+  let due = '';
+  if (set.deadline && !closed) due = dl < 0 ? `<span class="pill late">срок вышел</span>` : `<span class="pill">${dl === 0 ? 'сегодня последний день' : 'ещё ' + dl + ' ' + plural(dl, 'день', 'дня', 'дней')}</span>`;
+  if (closed) due = `<span class="pill ok">завершён ${dateRu(set.closedAt)}</span>`;
+  const earned = set.goals.filter(g => g.done).reduce((a, g) => a + (+g.coins || 0), 0);
+  const b = computeBonus(set);
+  const goals = set.goals.map(g => `
+    <li class="goal ${g.done ? 'done' : ''}" ${closed ? '' : `data-act="toggle" data-set="${set.id}" data-goal="${g.id}" role="checkbox" aria-checked="${g.done}" tabindex="0"`}>
+      <span class="check">✓</span>
+      <span class="g-title"><span>${esc(g.title)}</span>${g.reward ? `<span class="g-reward">🎁 ${esc(g.reward)}</span>` : ''}</span>
+      <span class="coins">+${coin(+g.coins || 0)}</span>
+    </li>`).join('');
+  let result = '';
+  if (closed && set.result) {
+    const r = set.result;
+    result = `<div class="result ${r.kind}">${r.kind === 'all' ? '🏆 Все цели выполнены! Получено ' : r.kind === 'partial' ? `🥈 Выполнено ${r.pct}% — бонус ` : `Выполнено ${r.pct}% — бонус не положен`}${r.kind !== 'none' ? coin(r.coins) + (r.reward ? ' и «' + esc(r.reward) + '»' : '') : ''}</div>`;
+  }
+  const allDone = p.total && p.done === p.total;
+  const late = set.deadline && dl < 0;
+  let foot = '';
+  if (!closed) {
+    foot = allDone
+      ? `<button class="btn gold" data-act="finalize" data-set="${set.id}">🏆 Забрать главный приз</button>`
+      : `<button class="btn ${late ? 'primary' : ''}" data-act="finalize" data-set="${set.id}">Подвести итог</button>`;
+  } else {
+    foot = `<button class="btn" data-act="restart" data-set="${set.id}">↻ Начать заново</button><button class="btn ghost" data-act="delete-set" data-set="${set.id}">Удалить</button>`;
+  }
+  return `<article class="card set ${closed ? 'closed' : ''}">
+    <div class="set-head">
+      <div class="set-emoji">${esc(set.emoji || '🎯')}</div>
+      <div class="set-title"><h3>${esc(set.title)}</h3>
+        <div class="meta">${due}<span>заработано ${coin(earned)}</span></div></div>
+      ${closed ? '' : `<button class="icon-btn" data-act="edit-set" data-set="${set.id}" aria-label="Изменить">✎</button>`}
+    </div>
+    <div class="progress ${allDone ? 'full' : ''}"><i style="width:${pct}%"></i></div>
+    <div class="prog-label"><span>${p.done} из ${p.total} ${plural(p.total, 'цели', 'целей', 'целей')}</span><span>${pct}%</span></div>
+    <ul class="goals">${goals}</ul>
+    ${closed ? result : `<div class="bonus">
+      <div class="bonus-row"><span class="b-ic">🏆</span><span><b>Все цели:</b> ${coin(+set.bonusAll.coins || 0)}${set.bonusAll.reward ? ' и «' + esc(set.bonusAll.reward) + '»' : ''}</span></div>
+      <div class="bonus-row ${set.partial.mode === 'none' ? 'dim' : ''}"><span class="b-ic">🥈</span><span>${partialText(set)}</span></div>
+      ${!allDone && b.kind === 'partial' ? `<div class="bonus-row" style="color:var(--ok)"><span class="b-ic">→</span><span>Сейчас вам положено: <b>${coin(b.coins)}</b>${b.reward ? ' и «' + esc(b.reward) + '»' : ''}</span></div>` : ''}
+    </div>`}
+    <div class="set-foot">${foot}</div>
+  </article>`;
+}
+
+function viewRewards() {
+  const open = S.prizes.filter(p => !p.used), used = S.prizes.filter(p => p.used);
+  let h = `<div class="section-h"><h2>Магазин наград</h2><span class="hint">покупайте за ${esc(S.coin.name)}</span></div>`;
+  h += S.shop.length ? `<div class="grid">${S.shop.map(it => `
+    <div class="card shop-item">
+      <button class="icon-btn edit" data-act="edit-shop" data-id="${it.id}" aria-label="Изменить">✎</button>
+      <div class="em">${esc(it.emoji || '🎁')}</div>
+      <div class="t">${esc(it.title)}</div>
+      <div class="cost">${coin(it.cost)}</div>
+      <button class="btn ${S.balance >= it.cost ? 'primary' : ''} sm" data-act="buy" data-id="${it.id}" ${S.balance >= it.cost ? '' : 'disabled'}>${S.balance >= it.cost ? 'Получить' : 'Не хватает ' + fmt(it.cost - S.balance)}</button>
+    </div>`).join('')}</div>`
+    : `<div class="card empty"><b>Магазин пуст</b>Добавьте то, чем хотите себя радовать: кино, вкусняшку, покупку.</div>`;
+  h += `<div class="section-h"><h2>Мои награды</h2><span class="hint">${open.length} ждут вас</span></div>`;
+  h += S.prizes.length ? `<div class="card">${[...open, ...used].map(p => `
+    <div class="prize ${p.used ? 'used' : ''}">
+      <span class="em">${esc(p.emoji)}</span>
+      <span class="t"><span>${esc(p.title)}</span><small>${esc(p.source)} · ${dateRu(p.at)}</small></span>
+      ${p.used ? '<span class="muted" style="font-size:13px">использована</span>' : `<button class="btn sm" data-act="use-prize" data-id="${p.id}">Использовать</button>`}
+    </div>`).join('')}</div>`
+    : `<div class="card empty"><b>Наград пока нет</b>Они появятся, когда выполните цель с наградой, заберёте бонус набора или купите что‑то в магазине.</div>`;
+  return h;
+}
+
+function viewHistory() {
+  const earned = S.log.filter(l => l.delta > 0).reduce((a, l) => a + l.delta, 0);
+  const doneGoals = S.sets.reduce((a, s) => a + s.goals.filter(g => g.done).length, 0);
+  const allSets = S.sets.filter(s => s.result && s.result.kind === 'all').length;
+  let h = `<div class="section-h"><h2>Статистика</h2></div>
+  <div class="stats">
+    <div class="card stat"><b>${fmt(doneGoals)}</b><span>целей выполнено</span></div>
+    <div class="card stat"><b>${fmt(allSets)}</b><span>наборов на 100%</span></div>
+    <div class="card stat"><b>${fmt(earned)}</b><span>${esc(S.coin.name)} заработано</span></div>
+  </div>
+  <div class="section-h"><h2>История</h2></div>`;
+  h += S.log.length ? `<div class="card log">${S.log.slice(0, 200).map(l => `
+    <div class="log-row"><time>${timeRu(l.at)}</time><span class="tx">${esc(l.text)}</span>${l.delta ? `<span class="delta ${l.delta > 0 ? 'p' : 'm'}">${l.delta > 0 ? '+' : '−'}${fmt(Math.abs(l.delta))}</span>` : ''}</div>`).join('')}</div>`
+    : `<div class="card empty"><b>Пока пусто</b>Здесь появятся выполненные цели, бонусы и покупки.</div>`;
+  return h;
+}
+
+function viewMore() {
+  return `${IN_APP ? '' : `<div class="section-h"><h2>Приложение</h2></div>
+  <div class="card form-card">
+    <div style="display:flex;gap:14px;align-items:center">
+      <div class="set-emoji" style="background:#e4efd6">${androidSvg(26)}</div>
+      <div style="flex:1"><b>Цели и награды для Android</b><div class="muted" style="font-size:13.5px">Скачайте APK, откройте файл и разрешите установку из этого источника.</div></div>
+    </div>
+    <div class="btn-row mt"><a class="btn primary" href="${APK_URL}" data-act="apk">Скачать APK</a></div>
+    <p class="muted" style="font-size:12.5px;margin:10px 0 0">Данные сайта и приложения хранятся отдельно, на каждом устройстве. Чтобы перенести прогресс — сделайте резервную копию ниже и вставьте её на другом устройстве.</p>
+  </div>`}
+  <div class="section-h"><h2>Валюта</h2></div>
+  <div class="card form-card">
+    <div class="row">
+      <label class="field" style="flex:0 0 90px"><span>Значок</span><input class="inp" id="coinIcon" maxlength="4" value="${esc(S.coin.icon)}"></label>
+      <label class="field"><span>Название (мн. ч.)</span><input class="inp" id="coinName" maxlength="20" value="${esc(S.coin.name)}"></label>
+    </div>
+    <div class="btn-row"><button class="btn primary sm" data-act="save-coin">Сохранить</button><button class="btn sm" data-act="adjust">Изменить баланс вручную</button></div>
+  </div>
+  <div class="section-h"><h2>Резервная копия</h2></div>
+  <div class="card form-card">
+    <div class="btn-row"><button class="btn" data-act="export-copy">Скопировать данные</button><button class="btn" data-act="export-file">${IN_APP ? 'Поделиться файлом' : 'Скачать файл'}</button></div>
+    <label class="field mt"><span>Восстановить</span><textarea class="inp" id="importText" placeholder="Вставьте сюда скопированные данные"></textarea><small>или выберите файл копии:</small><input type="file" id="importFile" accept=".json,application/json,text/plain"></label>
+    <button class="btn primary" data-act="import">Восстановить из копии</button>
+  </div>
+  <div class="section-h"><h2>Сброс</h2></div>
+  <div class="card form-card"><button class="btn danger" data-act="reset">Удалить все данные</button></div>
+  <p class="muted" style="text-align:center;font-size:12.5px;margin-top:22px">Цели и награды · данные хранятся только на этом устройстве</p>`;
+}
+
+/* ===================== Модальные окна ===================== */
+function modal({ title, body, okText = 'Готово', cancelText = 'Отмена', danger = false, onOk, onOpen, extra = '' }) {
+  const o = document.createElement('div'); o.className = 'overlay';
+  o.innerHTML = `<div class="sheet" role="dialog" aria-modal="true">
+    <div class="sheet-h"><h3>${title}</h3>${extra}<button class="icon-btn" data-x aria-label="Закрыть">✕</button></div>
+    <div class="sheet-b">${body}</div>
+    <div class="sheet-f">${cancelText ? `<button class="btn" data-x>${cancelText}</button>` : ''}<button class="btn ${danger ? 'danger' : 'primary'}" data-ok>${okText}</button></div></div>`;
+  const close = () => { o.remove(); window.__back = null; };
+  o.addEventListener('click', e => {
+    if (e.target === o || e.target.closest('[data-x]')) close();
+    else if (e.target.closest('[data-ok]')) { if (!onOk || onOk(o) !== false) close(); }
+  });
+  document.body.appendChild(o);
+  window.__back = () => { close(); return true; };
+  onOpen && onOpen(o, close);
+  return o;
+}
+function confirmBox(title, text, okText, onOk, danger) {
+  modal({ title, body: `<p style="margin:4px 0 8px">${text}</p>`, okText, danger, onOk });
+}
+
+const EMOJIS = ['🎯', '🏃', '📚', '💪', '🧘', '💼', '🏠', '💰', '🎨', '🥗', '😴', '🧠', '🎸', '🌱', '✈️', '⭐'];
+const SHOP_EMOJIS = ['🎁', '🎬', '🍕', '🎮', '☕', '🍰', '🛍️', '😴', '🎧', '📖', '🏖️', '🍣', '👟', '💆', '🎟️', '🧸'];
+
+function goalRow(g = {}) {
+  return `<div class="goal-edit" data-gid="${g.id || ''}">
+    <input class="inp g-t" placeholder="Цель, например «5 км пробежки»" value="${esc(g.title || '')}">
+    <input class="inp g-c" type="number" inputmode="numeric" min="0" placeholder="${S.coin.icon}" value="${g.coins ?? 10}" title="${esc(S.coin.name)} за цель">
+    <input class="inp g-r rw" placeholder="Своя награда за эту цель (необязательно)" value="${esc(g.reward || '')}">
+    <button class="icon-btn del" data-del aria-label="Удалить цель">🗑</button>
+  </div>`;
+}
+
+function editSet(setId) {
+  const existing = S.sets.find(s => s.id === setId);
+  const set = existing ? JSON.parse(JSON.stringify(existing)) : {
+    id: uid(), emoji: '🎯', title: '', deadline: '', goals: [{}, {}, {}].map(() => ({ id: '', title: '', coins: 10, reward: '' })),
+    bonusAll: { coins: 50, reward: '' }, partial: { mode: 'proportional', percent: 75, coins: 20, reward: '', minPercent: 50 }, status: 'active', createdAt: now(),
+  };
+  let mode = set.partial.mode, emoji = set.emoji;
+  const body = `
+    <label class="field"><span>Название набора</span><input class="inp" id="fTitle" placeholder="Например: «Ноябрь без отговорок»" value="${esc(set.title)}"></label>
+    <div class="field"><span>Значок</span><div class="emoji-pick" id="fEmoji">${EMOJIS.map(e => `<button type="button" aria-pressed="${e === emoji}">${e}</button>`).join('')}</div></div>
+    <label class="field"><span>Срок (необязательно)</span><input class="inp" type="date" id="fDeadline" value="${esc(set.deadline || '')}"></label>
+    <div class="field"><span>Цели и награда за каждую</span><small>Число — сколько ${esc(S.coin.name)} получите за цель. Можно добавить и свою награду текстом.</small></div>
+    <div id="fGoals">${set.goals.map(goalRow).join('')}</div>
+    <button type="button" class="btn sm" id="fAddGoal" style="margin-bottom:16px">＋ Добавить цель</button>
+    <div class="box"><h4>🏆 Главный приз — если выполнены ВСЕ цели</h4>
+      <div class="row"><label class="field" style="flex:0 0 120px"><span>${esc(S.coin.name)}</span><input class="inp" type="number" min="0" id="fAllCoins" value="${+set.bonusAll.coins || 0}"></label>
+      <label class="field"><span>Награда</span><input class="inp" id="fAllReward" placeholder="Например: «Новые кроссовки»" value="${esc(set.bonusAll.reward)}"></label></div>
+    </div>
+    <div class="box"><h4>🥈 Если выполнены НЕ все цели</h4>
+      <div class="seg" id="fMode">
+        <button type="button" data-m="proportional">По доле</button><button type="button" data-m="threshold">По порогу</button><button type="button" data-m="none">Ничего</button>
+      </div>
+      <div class="mt" id="fModeBody"></div>
+      <div class="preview mt" id="fPreview"></div>
+    </div>`;
+  modal({
+    title: existing ? 'Изменить набор' : 'Новый набор целей', body, okText: existing ? 'Сохранить' : 'Создать',
+    extra: existing ? `<button class="icon-btn" data-delset aria-label="Удалить набор" title="Удалить набор">🗑</button>` : '',
+    onOpen(o, close) {
+      const P = set.partial;
+      const modeBody = () => {
+        $('#fMode', o).querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.m === mode));
+        const mb = $('#fModeBody', o);
+        if (mode === 'proportional') mb.innerHTML = `<p class="muted" style="font-size:13.5px;margin:0 0 10px">Получите часть главного приза в ${esc(S.coin.name)} — ровно по доле выполненных целей. Текстовую награду главного приза — только за 100%.</p>
+          <div class="row"><label class="field" style="flex:0 0 120px"><span>Минимум, %</span><input class="inp" type="number" min="1" max="99" id="fMin" value="${P.minPercent}"></label>
+          <label class="field"><span>Доп. награда (необязательно)</span><input class="inp" id="fPReward" value="${esc(P.reward)}" placeholder="Например: «Кофе с десертом»"></label></div>`;
+        else if (mode === 'threshold') mb.innerHTML = `<p class="muted" style="font-size:13.5px;margin:0 0 10px">Фиксированный утешительный приз, если выполнено не меньше указанного процента целей.</p>
+          <div class="row"><label class="field"><span>Порог, %</span><input class="inp" type="number" min="1" max="99" id="fPct" value="${P.percent}"></label>
+          <label class="field"><span>${esc(S.coin.name)}</span><input class="inp" type="number" min="0" id="fPCoins" value="${+P.coins || 0}"></label></div>
+          <label class="field"><span>Награда (необязательно)</span><input class="inp" id="fPReward" value="${esc(P.reward)}" placeholder="Например: «Кофе с десертом»"></label>`;
+        else mb.innerHTML = `<p class="muted" style="font-size:13.5px;margin:0">Бонус только за выполнение всех целей. Монеты за отдельные цели всё равно начисляются.</p>`;
+        preview();
+      };
+      const readPartial = () => {
+        if ($('#fMin', o)) P.minPercent = clampPct($('#fMin', o).value);
+        if ($('#fPct', o)) P.percent = clampPct($('#fPct', o).value);
+        if ($('#fPCoins', o)) P.coins = Math.max(0, +$('#fPCoins', o).value || 0);
+        if ($('#fPReward', o)) P.reward = $('#fPReward', o).value.trim();
+      };
+      const preview = () => {
+        readPartial();
+        const n = Math.max(1, o.querySelectorAll('.goal-edit').length);
+        const full = Math.max(0, +$('#fAllCoins', o).value || 0);
+        const k = Math.max(1, Math.round(n * 0.7) === n ? n - 1 : Math.round(n * 0.7));
+        const pct = Math.round(k / n * 100);
+        let txt;
+        if (n === 1) txt = 'Добавьте хотя бы две цели, чтобы частичный бонус имел смысл.';
+        else if (mode === 'proportional') txt = pct >= P.minPercent ? `Пример: выполнено ${k} из ${n} (${pct}%) → +${coin(Math.round(full * k / n))}` : `Пример: ${k} из ${n} (${pct}%) — меньше минимума ${P.minPercent}%, бонуса не будет`;
+        else if (mode === 'threshold') txt = pct >= P.percent ? `Пример: выполнено ${k} из ${n} (${pct}%) → +${coin(P.coins)}${P.reward ? ' и «' + P.reward + '»' : ''}` : `Пример: ${k} из ${n} (${pct}%) — ниже порога ${P.percent}%, бонуса не будет`;
+        else txt = `Пример: выполнено ${k} из ${n} — бонуса нет, только ${esc(S.coin.name)} за сами цели`;
+        $('#fPreview', o).textContent = txt;
+      };
+      $('#fMode', o).addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; readPartial(); mode = b.dataset.m; modeBody(); });
+      o.addEventListener('input', preview);
+      $('#fEmoji', o).addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; emoji = b.textContent; $('#fEmoji', o).querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); });
+      $('#fAddGoal', o).addEventListener('click', () => { $('#fGoals', o).insertAdjacentHTML('beforeend', goalRow({ coins: 10 })); const l = o.querySelectorAll('.g-t'); l[l.length - 1].focus(); preview(); });
+      $('#fGoals', o).addEventListener('click', e => { if (e.target.closest('[data-del]')) { e.target.closest('.goal-edit').remove(); preview(); } });
+      const del = o.querySelector('[data-delset]');
+      if (del) del.addEventListener('click', () => { close(); confirmBox('Удалить набор?', `«${esc(existing.title)}» исчезнет. ${esc(S.coin.name)}, которые уже получены, останутся.`, 'Удалить', () => { S.sets = S.sets.filter(s => s.id !== existing.id); addLog(`Удалён набор: ${existing.title}`); save(); render(); }, true); });
+      modeBody();
+      if (!existing) setTimeout(() => $('#fTitle', o).focus(), 50);
+    },
+    onOk(o) {
+      const title = $('#fTitle', o).value.trim();
+      const rows = [...o.querySelectorAll('.goal-edit')].map(r => ({ id: r.dataset.gid, title: $('.g-t', r).value.trim(), coins: Math.max(0, Math.round(+$('.g-c', r).value || 0)), reward: $('.g-r', r).value.trim() })).filter(r => r.title);
+      if (!title) { toast('Введите название набора'); $('#fTitle', o).focus(); return false; }
+      if (!rows.length) { toast('Добавьте хотя бы одну цель'); return false; }
+      const P = set.partial;
+      if ($('#fMin', o)) P.minPercent = clampPct($('#fMin', o).value);
+      if ($('#fPct', o)) P.percent = clampPct($('#fPct', o).value);
+      if ($('#fPCoins', o)) P.coins = Math.max(0, +$('#fPCoins', o).value || 0);
+      if ($('#fPReward', o)) P.reward = $('#fPReward', o).value.trim();
+      P.mode = mode;
+      const old = existing ? existing.goals : [];
+      const goals = rows.map(r => {
+        const prev = old.find(g => g.id && g.id === r.id);
+        return { id: prev ? prev.id : uid(), title: r.title, coins: r.coins, reward: r.reward, done: prev ? prev.done : false, doneAt: prev ? prev.doneAt : null };
+      });
+      // пересчёт баланса, если изменились монеты у уже выполненных целей
+      const oldSum = old.filter(g => g.done).reduce((a, g) => a + (+g.coins || 0), 0);
+      const newSum = goals.filter(g => g.done).reduce((a, g) => a + (+g.coins || 0), 0);
+      const next = Object.assign(set, { title, emoji, deadline: $('#fDeadline', o).value || '', goals,
+        bonusAll: { coins: Math.max(0, Math.round(+$('#fAllCoins', o).value || 0)), reward: $('#fAllReward', o).value.trim() } });
+      if (existing) {
+        Object.assign(existing, next);
+        if (newSum !== oldSum) changeBalance(newSum - oldSum, `Пересчёт после изменения: ${title}`);
+        else addLog(`Изменён набор: ${title}`);
+      } else { S.sets.unshift(next); addLog(`Новый набор: ${title}`); }
+      save(); render(); toast(existing ? 'Сохранено' : 'Набор создан — вперёд!');
+    },
+  });
+}
+function clampPct(v) { return Math.min(99, Math.max(1, Math.round(+v || 0))); }
+
+function finalizeDialog(set) {
+  const b = computeBonus(set), p = progress(set);
+  let text;
+  if (b.kind === 'all') text = `Все ${p.total} ${plural(p.total, 'цель', 'цели', 'целей')} выполнены! Вы получите <b>${coin(b.coins)}</b>${b.reward ? ' и награду «' + esc(b.reward) + '»' : ''}.`;
+  else if (b.kind === 'partial') text = `Выполнено ${p.done} из ${p.total} (${b.pct}%). Частичный бонус: <b>${coin(b.coins)}</b>${b.reward ? ' и «' + esc(b.reward) + '»' : ''}.<br><span class="muted">Набор закроется, отмечать цели больше будет нельзя.</span>`;
+  else text = `Выполнено ${p.done} из ${p.total} (${b.pct}%). По правилам этого набора бонус не положен — ${esc(S.coin.name)} за выполненные цели останутся у вас.<br><span class="muted">Набор закроется. Можно будет начать его заново.</span>`;
+  confirmBox(b.kind === 'all' ? 'Главный приз 🏆' : 'Подвести итог?', text, b.kind === 'all' ? 'Забрать!' : 'Закрыть набор', () => finalizeSet(set));
+}
+
+function editShop(id) {
+  const it = S.shop.find(x => x.id === id);
+  let emoji = it ? it.emoji : '🎁';
+  modal({
+    title: it ? 'Изменить награду' : 'Новая награда в магазин', okText: it ? 'Сохранить' : 'Добавить',
+    extra: it ? `<button class="icon-btn" data-delshop aria-label="Удалить">🗑</button>` : '',
+    body: `<label class="field"><span>Что это</span><input class="inp" id="sTitle" placeholder="Например: «Поход в кафе»" value="${esc(it ? it.title : '')}"></label>
+      <label class="field"><span>Цена, ${esc(S.coin.name)}</span><input class="inp" type="number" min="0" id="sCost" value="${it ? it.cost : 100}"></label>
+      <div class="field"><span>Значок</span><div class="emoji-pick" id="sEmoji">${SHOP_EMOJIS.map(e => `<button type="button" aria-pressed="${e === emoji}">${e}</button>`).join('')}</div></div>`,
+    onOpen(o, close) {
+      $('#sEmoji', o).addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; emoji = b.textContent; $('#sEmoji', o).querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); });
+      const d = o.querySelector('[data-delshop]');
+      if (d) d.addEventListener('click', () => { S.shop = S.shop.filter(x => x.id !== id); save(); render(); close(); toast('Удалено'); });
+    },
+    onOk(o) {
+      const title = $('#sTitle', o).value.trim(), cost = Math.max(0, Math.round(+$('#sCost', o).value || 0));
+      if (!title) { toast('Введите название'); return false; }
+      if (it) Object.assign(it, { title, cost, emoji }); else S.shop.push({ id: uid(), title, cost, emoji });
+      save(); render();
+    },
+  });
+}
+
+/* ===================== Резервные копии ===================== */
+function exportJson() { return JSON.stringify(Object.assign({}, S, { exportedAt: new Date().toISOString() })); }
+async function copyText(t) {
+  try { await navigator.clipboard.writeText(t); return true; } catch (e) {
+    try { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy'); ta.remove(); return ok; } catch (e2) { return false; }
+  }
+}
+function importJson(text) {
+  let s; try { s = JSON.parse(text); } catch (e) { toast('Не получилось прочитать копию'); return; }
+  if (!s || s.v !== 1 || !Array.isArray(s.sets)) { toast('Это не резервная копия «Целей и наград»'); return; }
+  confirmBox('Восстановить копию?', 'Текущие данные на этом устройстве заменятся данными из копии.', 'Восстановить', () => {
+    delete s.exportedAt; S = normalize(s); save(); S.ui.tab = 'goals'; render(); toast('Данные восстановлены');
+  });
+}
+
+/* ===================== События ===================== */
+document.querySelector('.tabs').addEventListener('click', e => {
+  const t = e.target.closest('.tab'); if (!t) return; S.ui.tab = t.dataset.tab; save(); render(); window.scrollTo(0, 0);
+});
+$('#fab').addEventListener('click', () => S.ui.tab === 'rewards' ? editShop(null) : editSet(null));
+document.addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.goal[data-act]')) { e.preventDefault(); e.target.click(); }
+  if (e.key === 'Escape' && window.__back) window.__back();
+});
+$('#view').addEventListener('click', async e => {
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  const act = el.dataset.act, set = S.sets.find(s => s.id === el.dataset.set);
+  switch (act) {
+    case 'toggle': toggleGoal(el.dataset.set, el.dataset.goal); break;
+    case 'new-set': editSet(null); break;
+    case 'edit-set': editSet(el.dataset.set); break;
+    case 'finalize': set && finalizeDialog(set); break;
+    case 'restart': set && restartSet(set); break;
+    case 'delete-set': set && confirmBox('Удалить набор?', `«${esc(set.title)}» будет удалён из архива.`, 'Удалить', () => { S.sets = S.sets.filter(s => s !== set); save(); render(); }, true); break;
+    case 'hide-dl': S.ui.hideDl = true; save(); render(); toast('Скачать приложение можно во вкладке «Ещё»'); break;
+    case 'apk': {
+      e.preventDefault();
+      let ok = false;
+      try { const r = await fetch(APK_URL, { method: 'HEAD', cache: 'no-store' }); ok = r.ok; } catch (_) { }
+      if (ok) { location.href = APK_URL; toast('Загрузка началась — откройте файл, чтобы установить'); }
+      else modal({ title: 'APK ещё не собран', cancelText: '', okText: 'Понятно', body: `<p>На этом сайте пока нет файла приложения. Он появляется автоматически после сборки на GitHub (см. README в проекте).</p><p class="muted">Пока можно пользоваться сайтом — на Android его также можно добавить на главный экран через меню браузера → «Добавить на гл. экран».</p>` });
+      break;
+    }
+    case 'edit-shop': editShop(el.dataset.id); break;
+    case 'buy': {
+      const it = S.shop.find(x => x.id === el.dataset.id); if (!it) break;
+      confirmBox(`${esc(it.emoji)} ${esc(it.title)}`, `Потратить <b>${coin(it.cost)}</b>? Останется ${coin(S.balance - it.cost)}.`, 'Получить', () => {
+        if (S.balance < it.cost) return toast('Не хватает');
+        changeBalance(-it.cost, `Куплено: ${it.title}`); addPrize(it.title, 'из магазина', null, it.emoji); confetti(40); save(); render(); toast('Заслуженно! Награда в списке «Мои награды»');
+      });
+      break;
+    }
+    case 'use-prize': { const p = S.prizes.find(x => x.id === el.dataset.id); if (p) { p.used = true; p.usedAt = now(); addLog(`Использована награда: ${p.title}`); save(); render(); toast('Приятного отдыха!'); } break; }
+    case 'save-coin': {
+      S.coin.icon = $('#coinIcon').value.trim() || '🪙'; S.coin.name = $('#coinName').value.trim() || 'монет'; save(); render(); toast('Сохранено'); break;
+    }
+    case 'adjust':
+      modal({ title: 'Изменить баланс', okText: 'Применить', body: `<label class="field"><span>Сколько добавить (минус — списать)</span><input class="inp" type="number" id="adjV" value="0"></label><label class="field"><span>Причина</span><input class="inp" id="adjT" placeholder="Например: подарок за старание"></label>`,
+        onOk(o) { const v = Math.round(+$('#adjV', o).value || 0); if (!v) return; changeBalance(v, 'Вручную: ' + ($('#adjT', o).value.trim() || 'корректировка')); save(); render(); } });
+      break;
+    case 'export-copy': toast(await copyText(exportJson()) ? 'Скопировано — вставьте на другом устройстве' : 'Не удалось скопировать'); break;
+    case 'export-file': {
+      const name = 'celi-nagrady-' + new Date().toISOString().slice(0, 10) + '.json';
+      if (IN_APP && window.AndroidBridge) { window.AndroidBridge.shareFile(name, exportJson()); break; }
+      try {
+        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([exportJson()], { type: 'application/json' })); a.download = name;
+        document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      } catch (_) { toast('Скачивание недоступно — используйте «Скопировать данные»'); }
+      break;
+    }
+    case 'import': {
+      const f = $('#importFile').files[0];
+      if (f) { const r = new FileReader(); r.onload = () => importJson(r.result); r.readAsText(f); }
+      else if ($('#importText').value.trim()) importJson($('#importText').value.trim());
+      else toast('Вставьте копию или выберите файл');
+      break;
+    }
+    case 'reset': confirmBox('Удалить всё?', 'Все наборы, награды, баланс и история будут удалены без возможности восстановления.', 'Удалить всё', () => { S = seed(); S.sets = []; S.ui.hideDl = true; save(); render(); toast('Данные удалены'); }, true); break;
+  }
+});
+
+/* Кнопка «Назад» на Android */
+window.onAndroidBack = function () {
+  if (window.__back) return window.__back();
+  if (S.ui.tab !== 'goals') { S.ui.tab = 'goals'; save(); render(); return true; }
+  return false;
+};
+
+/* ===================== Конфетти ===================== */
+function confetti(n = 140) {
+  const c = $('#confetti'), ctx = c.getContext('2d'); c.classList.remove('hidden');
+  c.width = innerWidth * devicePixelRatio; c.height = innerHeight * devicePixelRatio; ctx.scale(devicePixelRatio, devicePixelRatio);
+  const cols = ['#e0a526', '#2e7d55', '#b9452f', '#2f5a4c', '#f3d27a', '#7fb685'];
+  const ps = Array.from({ length: n }, () => ({ x: innerWidth / 2 + (Math.random() - .5) * 120, y: innerHeight * .35, vx: (Math.random() - .5) * 12, vy: -Math.random() * 12 - 4, s: 5 + Math.random() * 6, r: Math.random() * 6, vr: (Math.random() - .5) * .3, c: cols[n * Math.random() % cols.length | 0] }));
+  let t = 0;
+  (function frame() {
+    ctx.clearRect(0, 0, innerWidth, innerHeight);
+    ps.forEach(p => { p.vy += .32; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.vr; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillStyle = p.c; ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); ctx.restore(); });
+    if (++t < 160) requestAnimationFrame(frame); else { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, c.width, c.height); c.classList.add('hidden'); }
+  })();
+}
+
+/* ===================== Офлайн‑режим сайта (PWA) ===================== */
+if ('serviceWorker' in navigator && location.protocol === 'https:' && !IN_APP) {
+  try { navigator.serviceWorker.register('sw.js').catch(() => { }); } catch (_) { }
+}
+
+save(); render();
+</script>
+</body>
+</html>
